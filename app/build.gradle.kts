@@ -14,11 +14,11 @@ plugins {
 }
 
 android {
-    namespace = "com.philkes.notallyx"
+    namespace = "com.sleepyyui.notallyx"
     compileSdk = 34
     ndkVersion = "29.0.13113456"
     defaultConfig {
-        applicationId = "com.philkes.notallyx"
+        applicationId = "com.sleepyyui.notallyx"
         minSdk = 21
         targetSdk = 34
         versionCode = project.findProperty("app.versionCode").toString().toInt()
@@ -37,11 +37,19 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file(providers.gradleProperty("RELEASE_STORE_FILE").get())
-            storePassword = providers.gradleProperty("RELEASE_STORE_PASSWORD").get()
-            keyAlias = providers.gradleProperty("RELEASE_KEY_ALIAS").get()
-            keyPassword = providers.gradleProperty("RELEASE_KEY_PASSWORD").get()
+        providers.gradleProperty("RELEASE_STORE_FILE").orNull?.let { storeFilePath ->
+            providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull?.let { storePassword ->
+                providers.gradleProperty("RELEASE_KEY_ALIAS").orNull?.let { keyAlias ->
+                    providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull?.let { keyPassword ->
+                        create("release") {
+                            storeFile = file(storeFilePath)
+                            this.storePassword = storePassword
+                            this.keyAlias = keyAlias
+                            this.keyPassword = keyPassword
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -59,9 +67,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // Apply signing config only if it exists
+            if (signingConfigs.names.contains("release")) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
-        create("beta"){
+        create("beta") {
             initWith(getByName("release"))
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-BETA"
@@ -138,10 +149,11 @@ tasks.register("generateChangelogs") {
     doLast {
         val githubToken = providers.gradleProperty("CHANGELOG_GITHUB_TOKEN").orNull
 
+        val lastVersionName = providers.gradleProperty("app.lastVersionName").orElse("").get()
         val command = mutableListOf(
             "bash",
             rootProject.file("generate-changelogs.sh").absolutePath,
-            "v${project.findProperty("app.lastVersionName").toString()}",
+            "v$lastVersionName",
             rootProject.file("CHANGELOG.md").absolutePath
         )
         if (!githubToken.isNullOrEmpty()) {
@@ -160,7 +172,7 @@ tasks.register("generateChangelogs") {
             file = rootProject.file("gradle.properties")
             load()
         }
-        val currentVersionName = config.getProperty("app.versionName")
+        val currentVersionName = providers.gradleProperty("app.versionName").orElse("").get()
         config.setProperty("app.lastVersionName", currentVersionName)
         fileHandler.save()
         println("Updated app.lastVersionName to $currentVersionName")
