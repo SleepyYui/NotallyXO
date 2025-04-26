@@ -31,18 +31,18 @@ The cloud synchronization feature will allow users to:
   - [x] `removeUserAccess()`: Remove a user's access
   - [x] `revokeToken()`: Invalidate an unused token
 
-### 2. Database Migration ⌛ (In Progress)
+### 2. Database Migration ✅ (Completed)
 
-- [ ] Create Room migration to add sync and sharing fields to the database schema
-- [ ] Update TypeConverters for new complex data types
-- [ ] Implement DAO methods for sync and sharing operations
+- [x] Create Room migration to add sync and sharing fields to the database schema
+- [x] Update TypeConverters for new complex data types
+- [x] Implement DAO methods for sync and sharing operations
 
-### 3. Encryption Implementation ⏱️ (Not Started)
+### 3. Encryption Implementation ⌛ (In Progress)
 
-- [ ] Implement end-to-end encryption for personal notes 
-  - [ ] Use AES-256 encryption for note content
-  - [ ] Derive encryption key from master password using PBKDF2
-  - [ ] Implement secure key storage
+- [ ] Extend existing encryption utilities for cloud sync
+  - [ ] Leverage existing AES encryption infrastructure
+  - [ ] Implement master password-based key derivation using PBKDF2
+  - [ ] Create content encryption/decryption service
 - [ ] Implement public/private key cryptography for shared notes
   - [ ] Generate user keypairs
   - [ ] Encrypt shared notes with symmetric key
@@ -105,7 +105,8 @@ The cloud synchronization feature will allow users to:
 
 ## Current Focus
 
-Currently focusing on creating the database migration to support our enhanced data model. This involves:
-1. Adding migration script to update the BaseNote table schema
-2. Creating TypeConverters to handle the new complex data types
-3. Adding DAO methods for the sync and sharing operations
+Currently focusing on extending the existing encryption utilities to support cloud synchronization. This involves:
+
+1. Creating a password-based key derivation function using PBKDF2
+2. Implementing note content encryption/decryption for cloud storage
+3. Setting up secure key management for note sharing
