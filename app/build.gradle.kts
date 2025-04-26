@@ -14,11 +14,11 @@ plugins {
 }
 
 android {
-    namespace = "com.sleepyyui.notallyx"
+    namespace = "com.sleepyyui.notallyxo"
     compileSdk = 34
     ndkVersion = "29.0.13113456"
     defaultConfig {
-        applicationId = "com.sleepyyui.notallyx"
+        applicationId = "com.sleepyyui.notallyxo"
         minSdk = 21
         targetSdk = 34
         versionCode = project.findProperty("app.versionCode").toString().toInt()
@@ -57,7 +57,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
-            resValue("string", "app_name", "NotallyX DEBUG")
+            resValue("string", "app_name", "NotallyXO DEBUG")
         }
         release {
             isCrunchPngs = false
@@ -76,7 +76,7 @@ android {
             initWith(getByName("release"))
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-BETA"
-            resValue("string", "app_name", "NotallyX BETA")
+            resValue("string", "app_name", "NotallyXO BETA")
         }
     }
 
@@ -84,7 +84,7 @@ android {
         this.outputs
             .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
             .forEach { output ->
-                output.outputFileName = "NotallyX-$versionName.apk"
+                output.outputFileName = "NotallyXO-$versionName.apk"
             }
     }
 

@@ -8,7 +8,7 @@
     <string name="adding_files">Adding files</string>
     <string name="adding_images">Adding images</string>
     <string name="all">All</string>
-    <string name="app_name" translatable="false">NotallyX</string>
+    <string name="app_name" translatable="false">NotallyXO</string>
     <string name="appearance">Appearance</string>
     <string name="archive">Archive</string>
     <string name="archived">Archived</string>
@@ -21,13 +21,13 @@
     <string name="audio_recordings">Audio Recordings</string>
     <string name="auto_backup">Auto Backups</string>
     <string name="auto_backup_error_message">An error occurred during auto backup:\n\'%1$s\'\nPlease check your settings or report a bug</string>
-    <string name="auto_backup_failed">NotallyX Auto Backup failed</string>
+    <string name="auto_backup_failed">NotallyXO Auto Backup failed</string>
     <string name="auto_backup_last">Last Backup</string>
     <string name="auto_backup_on_save">Backup on exit Note automatically</string>
-    <string name="auto_backup_on_save_hint">By enabling this, a backup (\"NotallyX_AutoBackup.zip\") is automatically created in the configured \"Backups Folder\" whenever a note is exited.\nBe aware this might affect performance</string>
+    <string name="auto_backup_on_save_hint">By enabling this, a backup (\"NotallyXO_AutoBackup.zip\") is automatically created in the configured \"Backups Folder\" whenever a note is exited.\nBe aware this might affect performance</string>
     <string name="auto_backups_folder">Backups Folder</string>
     <string name="auto_backups_folder_hint">Folder in which all auto backups will be stored in.</string>
-    <string name="auto_backups_folder_rechoose">You need to re-choose your Backups Folder so that NotallyX has permission to write to it.\nYou can also press cancel to skip importing Backups Folder value</string>
+    <string name="auto_backups_folder_rechoose">You need to re-choose your Backups Folder so that NotallyXO has permission to write to it.\nYou can also press cancel to skip importing Backups Folder value</string>
     <string name="auto_backups_folder_set">Set up a Backups Folder above first</string>
     <string name="auto_save_after_idle_time">Auto save note after specified idle time</string>
     <string name="auto_sort_by_checked">Sort checked items to the end</string>
@@ -89,7 +89,7 @@
     <string name="daily">Daily</string>
     <string name="dark">Dark</string>
     <string name="data_in_public">Store data in public folder</string>
-    <string name="data_in_public_message">By enabling this, the app’s internal database will be moved into the app’s public folder (Android/media/com.sleepyyui.notallyx).\nIn combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
+    <string name="data_in_public_message">By enabling this, the app’s internal database will be moved into the app’s public folder (Android/media/com.sleepyyui.notallyxo).\nIn combination with file synchronization apps this can be used to synchronize NotallyXO data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
     <string name="date_format_apply_in_note_view">Also apply in Note View</string>
@@ -167,7 +167,7 @@
     <string name="import_other">Import Notes from other App</string>
     <string name="import_settings">Import Settings</string>
     <string name="import_settings_failure">Failed to import settings, did you choose the correct file\?</string>
-    <string name="import_settings_message">In order to import settings, please choose a valid NotallyX settings JSON file</string>
+    <string name="import_settings_message">In order to import settings, please choose a valid NotallyXO settings JSON file</string>
     <string name="import_settings_success">Successfully imported settings</string>
     <string name="imported_files">Files imported</string>
     <string name="imported_notes">Notes imported</string>
@@ -236,12 +236,12 @@
     <string name="pin">Pin</string>
     <string name="pinned">Pinned</string>
     <string name="plain_text_files">Plain Text Files</string>
-    <string name="plain_text_files_help">In order to import your Notes from plain text files (single file or folder), click Import. Every file is imported as a separate note, the file’s name becomes the note’s title. If the text contents start with list syntax (e.g. Markdown ’- [x]’, NotallyX syntax ’[✓]’, or ’*’, ’-’) it will be converted to a List note.</string>
+    <string name="plain_text_files_help">In order to import your Notes from plain text files (single file or folder), click Import. Every file is imported as a separate note, the file’s name becomes the note’s title. If the text contents start with list syntax (e.g. Markdown ’- [x]’, NotallyXO syntax ’[✓]’, or ’*’, ’-’) it will be converted to a List note.</string>
     <string name="play">Play</string>
-    <string name="please_grant_notally_alarm">Please grant NotallyX to send reminders</string>
-    <string name="please_grant_notally_audio">Please grant NotallyX the permission to record audio. Recordings never leave your device</string>
-    <string name="please_grant_notally_notification">Please grant NotallyX the permission to send notifications</string>
-    <string name="please_grant_notally_notification_auto_backup">If an auto backup fails you can receive a notification, if you grant NotallyX permission to send notifications</string>
+    <string name="please_grant_notally_alarm">Please grant NotallyXO to send reminders</string>
+    <string name="please_grant_notally_audio">Please grant NotallyXO the permission to record audio. Recordings never leave your device</string>
+    <string name="please_grant_notally_notification">Please grant NotallyXO the permission to send notifications</string>
+    <string name="please_grant_notally_notification_auto_backup">If an auto backup fails you can receive a notification, if you grant NotallyXO permission to send notifications</string>
     <string name="previous">Previous</string>
     <string name="rate">Rate this app</string>
     <string name="read_only">Read Only</string>
@@ -271,7 +271,7 @@
     <string name="save_recording">Save recording\?</string>
     <string name="save_to_device">Save to device</string>
     <string name="saved_to_device">Saved to device</string>
-    <string name="saved_to_notally">Saved to NotallyX</string>
+    <string name="saved_to_notally">Saved to NotallyXO</string>
     <string name="search">Search</string>
     <string name="security">Security</string>
     <string name="select_all">Select All</string>
@@ -301,7 +301,7 @@
     <string name="theme">Theme</string>
     <string name="theme_use_dynamic_colors">Use system\'s wallpaper colors</string>
     <string name="title">Title</string>
-    <string name="to_record_audio">To record audio, allow NotallyX access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>
+    <string name="to_record_audio">To record audio, allow NotallyXO access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>
     <string name="unarchive">Unarchive</string>
     <plurals name="unarchived_selected_notes">
         <item quantity="one">Unarchived %1$d note</item>

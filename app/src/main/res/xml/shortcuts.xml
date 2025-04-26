@@ -8,8 +8,8 @@
 
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetClass="com.sleepyyui.notallyx.presentation.activity.note.EditNoteActivity"
-            android:targetPackage="com.sleepyyui.notallyx" />
+            android:targetClass="com.sleepyyui.notallyxo.presentation.activity.note.EditNoteActivity"
+            android:targetPackage="com.sleepyyui.notallyxo" />
 
     </shortcut>
 
@@ -20,8 +20,8 @@
 
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetClass="com.sleepyyui.notallyx.presentation.activity.note.EditListActivity"
-            android:targetPackage="com.sleepyyui.notallyx" />
+            android:targetClass="com.sleepyyui.notallyxo.presentation.activity.note.EditListActivity"
+            android:targetPackage="com.sleepyyui.notallyxo" />
 
     </shortcut>
 

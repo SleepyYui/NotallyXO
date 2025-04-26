@@ -52,7 +52,7 @@
               android:layout_centerVertical="true"
               android:layout_toEndOf="@id/DragHandle" />
 
-            <com.sleepyyui.notallyx.presentation.view.misc.EditTextAutoClearFocus
+            <com.sleepyyui.notallyxo.presentation.view.misc.EditTextAutoClearFocus
               android:id="@+id/EditText"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"

@@ -5,7 +5,7 @@ import android.content.Context
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.documentfile.provider.DocumentFile
-import com.sleepyyui.notallyx.utils.nameWithoutExtension
+import com.sleepyyui.notallyxo.utils.nameWithoutExtension
 
 /**
  * Needs to be in android.print package to access the package private methods of

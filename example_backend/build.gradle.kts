@@ -4,11 +4,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0" // Define version explicitly
 }
 
-group = "com.sleepyyui.notallyx"
+group = "com.sleepyyui.notallyxo"
 version = "0.0.1"
 
 application {
-    mainClass.set("com.sleepyyui.notallyx.backend.ApplicationKt")
+    mainClass.set("com.sleepyyui.notallyxo.backend.ApplicationKt")
 }
 
 kotlin {
@@ -42,6 +42,6 @@ dependencies {
 // Ktor plugin configuration
 ktor {
     fatJar {
-        archiveFileName.set("notallyx-backend.jar")
+        archiveFileName.set("notallyxo-backend.jar")
     }
 } 
