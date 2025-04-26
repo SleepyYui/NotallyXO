@@ -192,6 +192,7 @@ afterEvaluate {
 dependencies {
     val navVersion = "2.3.5"
     val roomVersion = "2.6.1"
+    val moshiVersion = "1.15.1"
 
     implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
     implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
@@ -202,6 +203,11 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
     implementation("androidx.work:work-runtime:2.9.1")
+
+    // Moshi for JSON serialization/deserialization
+    implementation("com.squareup.moshi:moshi:$moshiVersion")
+    implementation("com.squareup.moshi:moshi-kotlin:$moshiVersion")
+    ksp("com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion")
 
     implementation("cat.ereza:customactivityoncrash:2.4.0")
     implementation("com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0")

@@ -1,6 +1,10 @@
 package com.sleepyyui.notallyxo.data.model
 
 import androidx.room.TypeConverter
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import java.lang.reflect.Type
 import java.util.Date
 import org.json.JSONArray
 import org.json.JSONException
@@ -184,6 +188,61 @@ object Converters {
                 jsonObject.getString("unit")
             ) // Convert string back to TimeUnit
         return Repetition(value, unit)
+    }
+
+    @TypeConverter fun syncStatusToString(syncStatus: SyncStatus): String = syncStatus.name
+
+    @TypeConverter
+    fun stringToSyncStatus(value: String): SyncStatus =
+        try {
+            SyncStatus.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            SyncStatus.NOT_SYNCED
+        }
+
+    @TypeConverter
+    fun shareAccessLevelToString(accessLevel: ShareAccessLevel): String = accessLevel.name
+
+    @TypeConverter
+    fun stringToShareAccessLevel(value: String): ShareAccessLevel =
+        try {
+            ShareAccessLevel.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            ShareAccessLevel.READ_ONLY
+        }
+
+    @TypeConverter
+    fun sharedAccessesToJson(accesses: List<SharedAccess>): String {
+        val moshi = Moshi.Builder().build()
+        val listType: Type = Types.newParameterizedType(List::class.java, SharedAccess::class.java)
+        val adapter: JsonAdapter<List<SharedAccess>> = moshi.adapter(listType)
+        return adapter.toJson(accesses)
+    }
+
+    @TypeConverter
+    fun jsonToSharedAccesses(json: String): List<SharedAccess> {
+        if (json.isBlank() || json == "null") return emptyList()
+        val moshi = Moshi.Builder().build()
+        val listType: Type = Types.newParameterizedType(List::class.java, SharedAccess::class.java)
+        val adapter: JsonAdapter<List<SharedAccess>> = moshi.adapter(listType)
+        return adapter.fromJson(json) ?: emptyList()
+    }
+
+    @TypeConverter
+    fun sharingTokensToJson(tokens: List<SharingToken>): String {
+        val moshi = Moshi.Builder().build()
+        val listType: Type = Types.newParameterizedType(List::class.java, SharingToken::class.java)
+        val adapter: JsonAdapter<List<SharingToken>> = moshi.adapter(listType)
+        return adapter.toJson(tokens)
+    }
+
+    @TypeConverter
+    fun jsonToSharingTokens(json: String): List<SharingToken> {
+        if (json.isBlank() || json == "null") return emptyList()
+        val moshi = Moshi.Builder().build()
+        val listType: Type = Types.newParameterizedType(List::class.java, SharingToken::class.java)
+        val adapter: JsonAdapter<List<SharingToken>> = moshi.adapter(listType)
+        return adapter.fromJson(json) ?: emptyList()
     }
 
     private fun getSafeLocalName(jsonObject: JSONObject): String {

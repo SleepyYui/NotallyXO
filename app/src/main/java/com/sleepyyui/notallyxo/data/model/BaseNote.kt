@@ -27,12 +27,16 @@ data class BaseNote(
     val audios: List<Audio>,
     val reminders: List<Reminder>,
     val viewMode: NoteViewMode,
+
     // Cloud sync related fields
     val syncId: String = "",
     val syncStatus: SyncStatus = SyncStatus.NOT_SYNCED,
     val lastSyncedTimestamp: Long = 0,
+
+    // Sharing related fields
     val isShared: Boolean = false,
-    val sharedWithUsers: List<String> = emptyList(),
+    val sharedAccesses: List<SharedAccess> = emptyList(),
+    val sharingTokens: List<SharingToken> = emptyList(),
     val ownerUserId: String = "",
 ) : Item {
 
@@ -67,7 +71,8 @@ data class BaseNote(
         if (syncStatus != other.syncStatus) return false
         if (lastSyncedTimestamp != other.lastSyncedTimestamp) return false
         if (isShared != other.isShared) return false
-        if (sharedWithUsers != other.sharedWithUsers) return false
+        if (sharedAccesses != other.sharedAccesses) return false
+        if (sharingTokens != other.sharingTokens) return false
         if (ownerUserId != other.ownerUserId) return false
 
         return true
@@ -94,7 +99,8 @@ data class BaseNote(
         result = 31 * result + syncStatus.hashCode()
         result = 31 * result + lastSyncedTimestamp.hashCode()
         result = 31 * result + isShared.hashCode()
-        result = 31 * result + sharedWithUsers.hashCode()
+        result = 31 * result + sharedAccesses.hashCode()
+        result = 31 * result + sharingTokens.hashCode()
         result = 31 * result + ownerUserId.hashCode()
         return result
     }
@@ -109,7 +115,8 @@ fun BaseNote.deepCopy(): BaseNote {
         files = files.map { it.copy() }.toMutableList(),
         audios = audios.map { it.copy() }.toMutableList(),
         reminders = reminders.map { it.copy() }.toMutableList(),
-        sharedWithUsers = sharedWithUsers.toMutableList(),
+        sharedAccesses = sharedAccesses.toMutableList(),
+        sharingTokens = sharingTokens.toMutableList(),
     )
 }
 
@@ -139,4 +146,110 @@ fun BaseNote.markSynced(): BaseNote {
         syncStatus = SyncStatus.SYNCED,
         lastSyncedTimestamp = System.currentTimeMillis(),
     )
+}
+
+/**
+ * Creates a one-time sharing token for this note.
+ *
+ * @param accessLevel The level of access to grant with this token
+ * @param expirationTimeMs Optional expiration time in milliseconds (0 for no expiration)
+ * @return A new copy of this note with the generated sharing token
+ */
+fun BaseNote.createSharingToken(
+    accessLevel: ShareAccessLevel,
+    expirationTimeMs: Long = 0,
+): Pair<BaseNote, String> {
+    val token = UUID.randomUUID().toString()
+    val now = System.currentTimeMillis()
+
+    val sharingToken =
+        SharingToken(
+            token = token,
+            noteId = this.id,
+            accessLevel = accessLevel,
+            createdTimestamp = now,
+            expirationTimestamp = if (expirationTimeMs > 0) now + expirationTimeMs else 0,
+            isUsed = false,
+        )
+
+    val updatedNote = this.copy(isShared = true, sharingTokens = this.sharingTokens + sharingToken)
+
+    return Pair(updatedNote, token)
+}
+
+/**
+ * Adds a user to the shared access list using a token.
+ *
+ * @param tokenValue The token value to use
+ * @param userId The ID of the user to grant access to
+ * @return A new copy of this note with the user added if the token is valid, or the original note
+ *   if the token is invalid
+ */
+fun BaseNote.addUserWithToken(tokenValue: String, userId: String): BaseNote {
+    val token = this.sharingTokens.find { it.token == tokenValue } ?: return this // Token not found
+
+    if (!token.isValid()) {
+        return this // Token is expired or already used
+    }
+
+    // Mark token as used
+    val updatedTokens =
+        this.sharingTokens.map { if (it.token == tokenValue) it.markAsUsed() else it }
+
+    // Create shared access entry
+    val sharedAccess =
+        SharedAccess(
+            userId = userId,
+            accessLevel = token.accessLevel,
+            grantedTimestamp = System.currentTimeMillis(),
+            usedToken = tokenValue,
+        )
+
+    return this.copy(
+        isShared = true,
+        sharedAccesses = this.sharedAccesses + sharedAccess,
+        sharingTokens = updatedTokens,
+    )
+}
+
+/**
+ * Updates the access level for a user who already has access to this note.
+ *
+ * @param userId The ID of the user whose access level to update
+ * @param newAccessLevel The new access level to give the user
+ * @return A new copy of this note with the updated access level
+ */
+fun BaseNote.updateUserAccessLevel(userId: String, newAccessLevel: ShareAccessLevel): BaseNote {
+    val updatedAccesses =
+        this.sharedAccesses.map {
+            if (it.userId == userId) it.copy(accessLevel = newAccessLevel) else it
+        }
+
+    return this.copy(sharedAccesses = updatedAccesses)
+}
+
+/**
+ * Removes access for a user from this note.
+ *
+ * @param userId The ID of the user to remove
+ * @return A new copy of this note with the user removed
+ */
+fun BaseNote.removeUserAccess(userId: String): BaseNote {
+    val updatedAccesses = this.sharedAccesses.filter { it.userId != userId }
+    val isStillShared = updatedAccesses.isNotEmpty() || this.sharingTokens.any { it.isValid() }
+
+    return this.copy(isShared = isStillShared, sharedAccesses = updatedAccesses)
+}
+
+/**
+ * Revokes an unused sharing token.
+ *
+ * @param tokenValue The token value to revoke
+ * @return A new copy of this note with the token revoked
+ */
+fun BaseNote.revokeToken(tokenValue: String): BaseNote {
+    val updatedTokens = this.sharingTokens.filter { it.token != tokenValue }
+    val isStillShared = updatedTokens.any { it.isValid() } || this.sharedAccesses.isNotEmpty()
+
+    return this.copy(isShared = isStillShared, sharingTokens = updatedTokens)
 }

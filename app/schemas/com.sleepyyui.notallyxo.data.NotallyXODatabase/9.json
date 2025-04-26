@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "07dced64e454a2249e457d51d62f7a63",
+    "identityHash": "fe113658878dda0f133e79d110d671c8",
     "entities": [
       {
         "tableName": "BaseNote",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `folder` TEXT NOT NULL, `color` TEXT NOT NULL, `title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `modifiedTimestamp` INTEGER NOT NULL, `labels` TEXT NOT NULL, `body` TEXT NOT NULL, `spans` TEXT NOT NULL, `items` TEXT NOT NULL, `images` TEXT NOT NULL, `files` TEXT NOT NULL, `audios` TEXT NOT NULL, `reminders` TEXT NOT NULL, `viewMode` TEXT NOT NULL, `syncId` TEXT NOT NULL, `syncStatus` TEXT NOT NULL, `lastSyncedTimestamp` INTEGER NOT NULL, `isShared` INTEGER NOT NULL, `sharedWithUsers` TEXT NOT NULL, `ownerUserId` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `folder` TEXT NOT NULL, `color` TEXT NOT NULL, `title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `modifiedTimestamp` INTEGER NOT NULL, `labels` TEXT NOT NULL, `body` TEXT NOT NULL, `spans` TEXT NOT NULL, `items` TEXT NOT NULL, `images` TEXT NOT NULL, `files` TEXT NOT NULL, `audios` TEXT NOT NULL, `reminders` TEXT NOT NULL, `viewMode` TEXT NOT NULL, `syncId` TEXT NOT NULL, `syncStatus` TEXT NOT NULL, `lastSyncedTimestamp` INTEGER NOT NULL, `isShared` INTEGER NOT NULL, `sharedAccesses` TEXT NOT NULL, `sharingTokens` TEXT NOT NULL, `ownerUserId` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -135,8 +135,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "sharedWithUsers",
-            "columnName": "sharedWithUsers",
+            "fieldPath": "sharedAccesses",
+            "columnName": "sharedAccesses",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sharingTokens",
+            "columnName": "sharingTokens",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -194,7 +200,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '07dced64e454a2249e457d51d62f7a63')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fe113658878dda0f133e79d110d671c8')"
     ]
   }
 }
