@@ -9,9 +9,9 @@ import androidx.security.crypto.MasterKey
  * Manager for cloud synchronization settings.
  *
  * This class handles storing and retrieving user preferences related to cloud synchronization,
- * including server connection details and encryption keys.
+ * including server connection details and encryption settings.
  */
-class SyncSettingsManager(private val context: Context) {
+class SyncSettingsManager private constructor(private val context: Context) {
 
     companion object {
         // Preferences file name
@@ -123,7 +123,7 @@ class SyncSettingsManager(private val context: Context) {
     /** The complete server URL including the protocol, domain, and port. */
     fun getFullServerUrl(): String {
         val url = serverUrl.trim()
-        // Add http:// if the URL doesn't have a protocol
+        // Add https:// if the URL doesn't have a protocol
         val urlWithProtocol =
             if (!url.startsWith("http://") && !url.startsWith("https://")) {
                 "https://$url"

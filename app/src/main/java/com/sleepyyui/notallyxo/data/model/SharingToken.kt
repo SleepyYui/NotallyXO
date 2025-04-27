@@ -1,6 +1,9 @@
 package com.sleepyyui.notallyxo.data.model
 
+import com.squareup.moshi.JsonClass
+
 /** Represents a one-time token that can be shared with others to grant access to a note. */
+@JsonClass(generateAdapter = true)
 data class SharingToken(
     /** The unique hash value that identifies this token. */
     val token: String,

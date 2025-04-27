@@ -301,6 +301,7 @@ fun PreferenceBinding.setup(
         disabledTextResId?.let { Value.setText(it) }
     }
     root.isEnabled = enabled
+    root.alpha = if (enabled) 1.0f else 0.5f
     root.setOnClickListener {
         val layout =
             DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
@@ -347,6 +348,7 @@ fun PreferenceBinding.setupPeriodicBackup(
         } else context.getString(R.string.auto_backups_folder_set)
     Value.text = text
     root.isEnabled = enabled
+    root.alpha = if (enabled) 1.0f else 0.5f
     root.setOnClickListener {
         val layout =
             DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
@@ -555,5 +557,40 @@ fun PreferenceBinding.setupStartView(
             }
             .setCancelButton()
             .showAndFocus(allowFullSize = true)
+    }
+}
+
+// Corrected setup function for simple title/subtitle display
+fun PreferenceBinding.setup(title: String, subtitle: String, isEnabled: Boolean = true) {
+    Title.text = title
+    Value.text = subtitle
+    Value.visibility =
+        if (subtitle.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+    root.isEnabled = isEnabled
+    // Adjust alpha for visual indication of disabled state
+    root.alpha = if (isEnabled) 1.0f else 0.5f
+}
+
+// Corrected setup function for preferences simulating a switch
+fun PreferenceBinding.setup(
+    title: String,
+    subtitle: String,
+    isChecked: Boolean,
+    isEnabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Title.text = title
+    Value.text = subtitle // Keep subtitle for context
+    Value.visibility =
+        if (subtitle.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+    root.isEnabled = isEnabled
+    // Adjust alpha for visual indication of disabled state
+    root.alpha = if (isEnabled) 1.0f else 0.5f
+
+    // Clicking the root triggers the change logic defined in the fragment
+    root.setOnClickListener {
+        if (isEnabled) { // Only trigger if enabled
+            onCheckedChange(!isChecked) // Pass the *intended* new state
+        }
     }
 }

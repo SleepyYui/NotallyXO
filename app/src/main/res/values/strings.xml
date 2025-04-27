@@ -326,4 +326,39 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
+
+    <!-- Cloud Synchronization -->
+    <string name="cloud_sync">Cloud Sync</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="cloud_sync_enabled">Enable Cloud Sync</string>
+    <string name="cloud_sync_enabled_message">Enable synchronization with a custom server</string>
+    <string name="cloud_server_config">Server Configuration</string>
+    <string name="cloud_server_config_message">Configure server connection settings</string>
+    <string name="cloud_encryption_password">Encryption Password</string>
+    <string name="cloud_encryption_password_message">Set password to encrypt data before sending to server</string>
+    <string name="cloud_sync_options">Sync Options</string>
+    <string name="cloud_sync_options_message">Configure auto-sync and connectivity preferences</string>
+    <string name="cloud_sync_status">Last sync: %1$s</string>
+    <string name="cloud_share_note">Share Note</string>
+    <string name="cloud_share_note_message">Create a one-time share link for this note</string>
+    <string name="cloud_shared_with_you">Shared with you</string>
+    <string name="cloud_join_shared_note">Join Shared Note</string>
+    <string name="cloud_server_url">Server URL</string>
+    <string name="cloud_server_port">Port</string>
+    <string name="cloud_auth_token">Authentication Token</string>
+    <string name="cloud_auto_sync">Auto Sync</string>
+    <string name="cloud_wifi_only">Sync on Wi-Fi Only</string>
+    <string name="cloud_share_access_level">Access Level</string>
+    <string name="cloud_share_read_only">Read Only</string>
+    <string name="cloud_share_read_write">Read &amp; Write</string>
+    <string name="cloud_share_token">Share Token</string>
+    <string name="cloud_share_token_copied">Share token copied to clipboard</string>
+    <string name="cloud_share_token_generate">Generate Token</string>
+    <string name="cloud_share_token_expires">Expires in %1$s</string>
+    <string name="cloud_share_token_no_expiry">No expiration</string>
+    <string name="cloud_sync_in_progress">Sync in progress…</string>
+    <string name="cloud_sync_completed">Sync completed</string>
+    <string name="cloud_sync_failed">Sync failed: %1$s</string>
+    <string name="cloud_not_configured">Server not configured</string>
+    <string name="cloud_connection_error">Connection error</string>
 </resources>

@@ -274,93 +274,83 @@ abstract class NotallyXODatabase : RoomDatabase() {
             }
         }
 
-        /**
-         * Migration from version 9 to 10:
-         * - Add fields for cloud synchronization
-         */
-        private val Migration10 =
-            object : Migration(9, 10) {
-                override fun migrate(database: SupportSQLiteDatabase) {
-                    // Add columns safely by checking if they exist first
-                    addColumnIfNotExists(database, "BaseNote", "syncId", "TEXT NOT NULL DEFAULT ''")
-                    addColumnIfNotExists(
-                        database,
-                        "BaseNote",
-                        "syncStatus",
-                        "TEXT NOT NULL DEFAULT 'NOT_SYNCED'",
-                    )
-                    addColumnIfNotExists(
-                        database,
-                        "BaseNote",
-                        "lastSyncedTimestamp",
-                        "INTEGER NOT NULL DEFAULT 0",
-                    )
-                    addColumnIfNotExists(
-                        database,
-                        "BaseNote",
-                        "isShared",
-                        "INTEGER NOT NULL DEFAULT 0",
-                    )
-                    addColumnIfNotExists(
-                        database,
-                        "BaseNote",
-                        "sharedAccesses",
-                        "TEXT NOT NULL DEFAULT '[]'",
-                    )
-                    addColumnIfNotExists(
-                        database,
-                        "BaseNote",
-                        "sharingTokens",
-                        "TEXT NOT NULL DEFAULT '[]'",
-                    )
-                    addColumnIfNotExists(
-                        database,
-                        "BaseNote",
-                        "ownerUserId",
-                        "TEXT NOT NULL DEFAULT ''",
-                    )
-                }
+        object Migration10 : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add columns safely by checking if they exist first
+                addColumnIfNotExists(database, "BaseNote", "syncId", "TEXT NOT NULL DEFAULT ''")
+                addColumnIfNotExists(
+                    database,
+                    "BaseNote",
+                    "syncStatus",
+                    "TEXT NOT NULL DEFAULT 'NOT_SYNCED'",
+                )
+                addColumnIfNotExists(
+                    database,
+                    "BaseNote",
+                    "lastSyncedTimestamp",
+                    "INTEGER NOT NULL DEFAULT 0",
+                )
+                addColumnIfNotExists(database, "BaseNote", "isShared", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfNotExists(
+                    database,
+                    "BaseNote",
+                    "sharedAccesses",
+                    "TEXT NOT NULL DEFAULT '[]'",
+                )
+                addColumnIfNotExists(
+                    database,
+                    "BaseNote",
+                    "sharingTokens",
+                    "TEXT NOT NULL DEFAULT '[]'",
+                )
+                addColumnIfNotExists(
+                    database,
+                    "BaseNote",
+                    "ownerUserId",
+                    "TEXT NOT NULL DEFAULT ''",
+                )
+            }
 
-                /** Safely adds a column to a table if it doesn't already exist */
-                private fun addColumnIfNotExists(
-                    db: SupportSQLiteDatabase,
-                    table: String,
-                    column: String,
-                    type: String,
-                ) {
-                    // Check if the column already exists
-                    val cursor = db.query("PRAGMA table_info($table)")
-                    val columnIndex = cursor.getColumnIndex("name")
-                    val columnExists =
-                        if (columnIndex >= 0) {
-                            var exists = false
-                            while (cursor.moveToNext()) {
-                                val existingColumn = cursor.getString(columnIndex)
-                                if (existingColumn == column) {
-                                    exists = true
-                                    break
-                                }
+            /** Safely adds a column to a table if it doesn't already exist */
+            private fun addColumnIfNotExists(
+                db: SupportSQLiteDatabase,
+                table: String,
+                column: String,
+                type: String,
+            ) {
+                // Check if the column already exists
+                val cursor = db.query("PRAGMA table_info($table)")
+                val columnIndex = cursor.getColumnIndex("name")
+                val columnExists =
+                    if (columnIndex >= 0) {
+                        var exists = false
+                        while (cursor.moveToNext()) {
+                            val existingColumn = cursor.getString(columnIndex)
+                            if (existingColumn == column) {
+                                exists = true
+                                break
                             }
-                            exists
-                        } else {
-                            false
                         }
-                    cursor.close()
+                        exists
+                    } else {
+                        false
+                    }
+                cursor.close()
 
-                    // Only add the column if it doesn't exist
-                    if (!columnExists) {
-                        try {
-                            db.execSQL("ALTER TABLE $table ADD COLUMN $column $type")
-                        } catch (e: Exception) {
-                            // Log the exception but don't crash - this handles edge cases
-                            android.util.Log.e(
-                                "NotallyXODatabase",
-                                "Error adding column $column to $table",
-                                e,
-                            )
-                        }
+                // Only add the column if it doesn't exist
+                if (!columnExists) {
+                    try {
+                        db.execSQL("ALTER TABLE $table ADD COLUMN $column $type")
+                    } catch (e: Exception) {
+                        // Log the exception but don't crash - this handles edge cases
+                        android.util.Log.e(
+                            "NotallyXODatabase",
+                            "Error adding column $column to $table",
+                            e,
+                        )
                     }
                 }
             }
+        }
     }
 }

@@ -104,6 +104,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true // Explicitly enable buildConfig
     }
 
     packaging {
@@ -208,6 +209,11 @@ dependencies {
     implementation("com.squareup.moshi:moshi:$moshiVersion")
     implementation("com.squareup.moshi:moshi-kotlin:$moshiVersion")
     ksp("com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion")
+
+    // Retrofit for networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Gson converter
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0") // Optional: For logging network requests
 
     implementation("cat.ereza:customactivityoncrash:2.4.0")
     implementation("com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0")

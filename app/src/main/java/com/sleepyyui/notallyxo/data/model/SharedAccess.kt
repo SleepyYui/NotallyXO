@@ -1,6 +1,9 @@
 package com.sleepyyui.notallyxo.data.model
 
+import com.squareup.moshi.JsonClass
+
 /** Represents a user who has access to a shared note. */
+@JsonClass(generateAdapter = true)
 data class SharedAccess(
     /** The unique identifier for the user who has access to the note. */
     val userId: String,

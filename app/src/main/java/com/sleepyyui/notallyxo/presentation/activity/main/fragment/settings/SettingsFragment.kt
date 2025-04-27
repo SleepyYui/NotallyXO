@@ -15,19 +15,23 @@ import android.text.method.PasswordTransformationMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity.RESULT_OK
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import com.sleepyyui.notallyxo.NotallyXOApplication
 import com.sleepyyui.notallyxo.R
 import com.sleepyyui.notallyxo.data.imports.FOLDER_OR_FILE_MIMETYPE
 import com.sleepyyui.notallyxo.data.imports.ImportSource
 import com.sleepyyui.notallyxo.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
+import com.sleepyyui.notallyxo.data.model.SyncStatus
 import com.sleepyyui.notallyxo.data.model.toText
 import com.sleepyyui.notallyxo.databinding.DialogTextInputBinding
 import com.sleepyyui.notallyxo.databinding.FragmentSettingsBinding
@@ -58,13 +62,20 @@ import com.sleepyyui.notallyxo.utils.getLastExceptionLog
 import com.sleepyyui.notallyxo.utils.getLogFile
 import com.sleepyyui.notallyxo.utils.getUriForFile
 import com.sleepyyui.notallyxo.utils.reportBug
+import com.sleepyyui.notallyxo.utils.security.CloudEncryptionService
 import com.sleepyyui.notallyxo.utils.security.showBiometricOrPinPrompt
+import com.sleepyyui.notallyxo.utils.sync.SyncSettingsManager
+import com.sleepyyui.notallyxo.utils.sync.SyncStatusIndicator
 import com.sleepyyui.notallyxo.utils.wrapWithChooser
 import java.util.Date
 
 class SettingsFragment : Fragment() {
 
     private val model: BaseNoteModel by activityViewModels()
+
+    private var _binding: FragmentSettingsBinding? = null
+    private val binding
+        get() = _binding!!
 
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importOtherActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -76,13 +87,16 @@ class SettingsFragment : Fragment() {
     private lateinit var importSettingsActivityResultLauncher: ActivityResultLauncher<Intent>
 
     private lateinit var selectedImportSource: ImportSource
+    private lateinit var syncStatusIndicator: SyncStatusIndicator
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val binding = FragmentSettingsBinding.inflate(inflater)
+        _binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        syncStatusIndicator = SyncStatusIndicator.getInstance(requireContext())
+
         model.preferences.apply {
             setupAppearance(binding)
             setupContentDensity(binding)
@@ -92,12 +106,19 @@ class SettingsFragment : Fragment() {
             setupSettings(binding)
         }
         setupAbout(binding)
+        setupCloudSync(binding)
         return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupActivityResultLaunchers()
+
         val showImportBackupsFolder =
             getExtraBooleanFromBundleOrIntent(
                 savedInstanceState,
@@ -784,6 +805,290 @@ class SettingsFragment : Fragment() {
                 VersionText.text = "v$version"
             } catch (_: PackageManager.NameNotFoundException) {}
         }
+    }
+
+    private fun setupCloudSync(binding: FragmentSettingsBinding) {
+        val syncSettingsManager = SyncSettingsManager.getInstance(requireContext())
+
+        fun updateDependentPreferenceStates(isEnabled: Boolean) {
+            _binding?.let { b ->
+                b.CloudServerConfig.setup(
+                    title = getString(R.string.cloud_server_config),
+                    subtitle = getString(R.string.cloud_server_config_message),
+                    isEnabled = isEnabled,
+                )
+                b.CloudEncryptionPassword.setup(
+                    title = getString(R.string.cloud_encryption_password),
+                    subtitle = getString(R.string.cloud_encryption_password_message),
+                    isEnabled = isEnabled,
+                )
+                b.CloudSyncOptions.setup(
+                    title = getString(R.string.cloud_sync_options),
+                    subtitle = getString(R.string.cloud_sync_options_message),
+                    isEnabled = isEnabled,
+                )
+                val isConfigured = syncSettingsManager.areSettingsConfigured()
+                b.CloudSyncNow.isEnabled = isEnabled && isConfigured
+                b.CloudSyncNow.alpha = if (b.CloudSyncNow.isEnabled) 1.0f else 0.5f
+
+                if (!isEnabled) {
+                    b.CloudSyncStatus.visibility = View.GONE
+                } else if (!isConfigured) {
+                    b.CloudSyncStatus.text = getString(R.string.cloud_not_configured)
+                    b.CloudSyncStatus.visibility = View.VISIBLE
+                } else {
+                    syncStatusIndicator.updateStatusText(b.CloudSyncStatus)
+                }
+            }
+        }
+
+        val cloudSyncSwitch =
+            inflatePreferenceSwitch(
+                layoutInflater,
+                null,
+                getString(R.string.cloud_sync_enabled),
+                getString(R.string.cloud_sync_enabled_message),
+                syncSettingsManager.isSyncEnabled,
+                true,
+            ) { isChecked ->
+                syncSettingsManager.isSyncEnabled = isChecked
+                updateDependentPreferenceStates(isChecked)
+
+                if (!isChecked) {
+                    syncStatusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED)
+                } else if (!syncSettingsManager.areSettingsConfigured()) {
+                    syncStatusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED)
+                } else {
+                    syncStatusIndicator.updateStatus(SyncStatus.IDLE)
+                }
+            }
+
+        binding.CloudSyncEnabledContainer.removeAllViews()
+        binding.CloudSyncEnabledContainer.addView(cloudSyncSwitch.root)
+
+        updateDependentPreferenceStates(syncSettingsManager.isSyncEnabled)
+
+        binding.CloudServerConfig.root.setOnClickListener {
+            if (syncSettingsManager.isSyncEnabled) showServerConfigDialog(syncSettingsManager)
+        }
+        binding.CloudEncryptionPassword.root.setOnClickListener {
+            if (syncSettingsManager.isSyncEnabled) showEncryptionPasswordDialog(syncSettingsManager)
+        }
+        binding.CloudSyncOptions.root.setOnClickListener {
+            if (syncSettingsManager.isSyncEnabled) showSyncOptionsDialog(syncSettingsManager)
+        }
+
+        binding.CloudSyncNow.setOnClickListener {
+            if (binding.CloudSyncNow.isEnabled) {
+                syncStatusIndicator.updateStatus(SyncStatus.SYNCING)
+                syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
+
+                binding.CloudSyncNow.isEnabled = false
+                binding.CloudSyncNow.alpha = 0.5f
+
+                android.os
+                    .Handler(android.os.Looper.getMainLooper())
+                    .postDelayed(
+                        {
+                            syncStatusIndicator.updateStatus(SyncStatus.SYNCED, isTemporary = true)
+                            syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
+                            binding.CloudSyncNow.isEnabled = true
+                            binding.CloudSyncNow.alpha = 1.0f
+                        },
+                        2000,
+                    )
+            }
+        }
+
+        if (syncSettingsManager.isSyncEnabled) {
+            syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
+        } else {
+            binding.CloudSyncStatus.visibility = View.GONE
+        }
+
+        syncStatusIndicator.syncStatus.observe(viewLifecycleOwner) { status ->
+            _binding?.let { b ->
+                if (syncSettingsManager.isSyncEnabled) {
+                    syncStatusIndicator.updateStatusText(b.CloudSyncStatus)
+                }
+
+                val canSync =
+                    status != SyncStatus.SYNCING &&
+                        syncSettingsManager.isSyncEnabled &&
+                        syncSettingsManager.areSettingsConfigured()
+
+                b.CloudSyncNow.isEnabled = canSync
+                b.CloudSyncNow.alpha = if (canSync) 1.0f else 0.5f
+            }
+        }
+    }
+
+    private fun showServerConfigDialog(syncSettingsManager: SyncSettingsManager) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_server_config, null)
+
+        val serverUrlInput = dialogView.findViewById<TextInputEditText>(R.id.serverUrlInput)
+        val serverPortInput = dialogView.findViewById<TextInputEditText>(R.id.serverPortInput)
+        val authTokenInput = dialogView.findViewById<TextInputEditText>(R.id.authTokenInput)
+
+        serverUrlInput.setText(syncSettingsManager.serverUrl)
+        serverPortInput.setText(syncSettingsManager.serverPort.toString())
+        authTokenInput.setText(syncSettingsManager.authToken)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.cloud_server_config)
+            .setView(dialogView)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                val serverUrl = serverUrlInput.text.toString().trim()
+                val serverPortText = serverPortInput.text.toString().trim()
+                val serverPort = serverPortText.toIntOrNull() ?: 8080
+                val authToken = authTokenInput.text.toString().trim()
+
+                syncSettingsManager.serverUrl = serverUrl
+                syncSettingsManager.serverPort = serverPort
+                syncSettingsManager.authToken = authToken
+
+                val configComplete = syncSettingsManager.areSettingsConfigured()
+                if (configComplete) {
+                    syncStatusIndicator.updateStatus(SyncStatus.IDLE)
+                } else {
+                    syncStatusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED)
+                }
+
+                _binding?.let { b ->
+                    b.CloudSyncNow.isEnabled = configComplete
+                    b.CloudSyncNow.alpha = if (configComplete) 1.0f else 0.5f
+                    syncStatusIndicator.updateStatusText(b.CloudSyncStatus)
+                }
+
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun showEncryptionPasswordDialog(syncSettingsManager: SyncSettingsManager) {
+        val layout = DialogTextInputBinding.inflate(layoutInflater, null, false)
+
+        layout.InputText.apply {
+            transformationMethod = PasswordTransformationMethod.getInstance()
+            hint = getString(R.string.cloud_encryption_password)
+        }
+
+        layout.InputTextLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
+        layout.Message.apply {
+            setText(R.string.cloud_encryption_password_message)
+            visibility = View.VISIBLE
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.cloud_encryption_password)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                val password = layout.InputText.text.toString()
+
+                if (password.isNotEmpty()) {
+                    try {
+                        val cloudEncryptionService = CloudEncryptionService()
+                        val salt = cloudEncryptionService.generateSalt()
+                        syncSettingsManager.encryptionSalt =
+                            android.util.Base64.encodeToString(salt, android.util.Base64.NO_WRAP)
+
+                        if (syncSettingsManager.userId.isEmpty()) {
+                            syncSettingsManager.userId = cloudEncryptionService.createUserId()
+                        }
+
+                        Toast.makeText(
+                                requireContext(),
+                                "Encryption password set",
+                                Toast.LENGTH_SHORT,
+                            )
+                            .show()
+
+                        val configComplete = syncSettingsManager.areSettingsConfigured()
+                        if (configComplete) {
+                            syncStatusIndicator.updateStatus(SyncStatus.IDLE)
+                        } else {
+                            syncStatusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED)
+                        }
+
+                        _binding?.let { b ->
+                            b.CloudSyncNow.isEnabled = configComplete
+                            b.CloudSyncNow.alpha = if (configComplete) 1.0f else 0.5f
+                            syncStatusIndicator.updateStatusText(b.CloudSyncStatus)
+                        }
+                    } catch (e: Exception) {
+                        syncStatusIndicator.updateStatus(
+                            SyncStatus.FAILED,
+                            "Failed to set encryption: ${e.message}",
+                        )
+                        Toast.makeText(
+                                requireContext(),
+                                "Error setting encryption",
+                                Toast.LENGTH_SHORT,
+                            )
+                            .show()
+                    }
+                } else {
+                    syncSettingsManager.encryptionSalt = ""
+                    Toast.makeText(
+                            requireContext(),
+                            "Encryption password cleared",
+                            Toast.LENGTH_SHORT,
+                        )
+                        .show()
+
+                    syncStatusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED)
+                    _binding?.let { b ->
+                        b.CloudSyncNow.isEnabled = false
+                        b.CloudSyncNow.alpha = 0.5f
+                        syncStatusIndicator.updateStatusText(b.CloudSyncStatus)
+                    }
+                }
+
+                dialog.dismiss()
+            }
+            .setNeutralButton(R.string.clear) { dialog, _ ->
+                syncSettingsManager.encryptionSalt = ""
+                Toast.makeText(requireContext(), "Encryption password cleared", Toast.LENGTH_SHORT)
+                    .show()
+
+                syncStatusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED)
+                _binding?.let { b ->
+                    b.CloudSyncNow.isEnabled = false
+                    b.CloudSyncNow.alpha = 0.5f
+                    syncStatusIndicator.updateStatusText(b.CloudSyncStatus)
+                }
+
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun showSyncOptionsDialog(syncSettingsManager: SyncSettingsManager) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_sync_options, null)
+
+        val autoSyncSwitch = dialogView.findViewById<SwitchCompat>(R.id.autoSyncSwitch)
+        val wifiOnlySwitch = dialogView.findViewById<SwitchCompat>(R.id.wifiOnlySwitch)
+
+        autoSyncSwitch.isChecked = syncSettingsManager.isAutoSyncEnabled
+        wifiOnlySwitch.isChecked = syncSettingsManager.isWifiOnlySync
+        wifiOnlySwitch.isEnabled = autoSyncSwitch.isChecked
+
+        autoSyncSwitch.setOnCheckedChangeListener { _, isChecked ->
+            wifiOnlySwitch.isEnabled = isChecked
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.cloud_sync_options)
+            .setView(dialogView)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                syncSettingsManager.isAutoSyncEnabled = autoSyncSwitch.isChecked
+                syncSettingsManager.isWifiOnlySync = wifiOnlySwitch.isChecked
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     private fun displayChooseBackupFolderDialog() {

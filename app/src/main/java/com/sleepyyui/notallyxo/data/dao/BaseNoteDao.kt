@@ -16,6 +16,7 @@ import com.sleepyyui.notallyxo.data.model.Folder
 import com.sleepyyui.notallyxo.data.model.LabelsInBaseNote
 import com.sleepyyui.notallyxo.data.model.ListItem
 import com.sleepyyui.notallyxo.data.model.Reminder
+import com.sleepyyui.notallyxo.data.model.SyncStatus // Added import
 import com.sleepyyui.notallyxo.data.model.Type
 
 data class NoteIdReminder(val id: Long, val reminders: List<Reminder>)
@@ -240,4 +241,34 @@ interface BaseNoteDao {
         }
         return false
     }
+
+    /** Get all notes that need to be synced (have pending changes or need to be uploaded) */
+    @Query("SELECT * FROM BaseNote WHERE syncStatus = 'PENDING_UPLOAD'")
+    suspend fun getNotesNeedingSync(): List<BaseNote>
+
+    /** Get all notes that have been deleted locally but need to be deleted on the server */
+    @Query("SELECT * FROM BaseNote WHERE syncStatus = 'PENDING_DELETE' AND syncId != ''")
+    suspend fun getNotesNeedingDeletion(): List<BaseNote>
+
+    /** Get notes modified since a specific timestamp */
+    @Query("SELECT * FROM BaseNote WHERE modifiedTimestamp > :timestamp")
+    suspend fun getNotesModifiedSince(timestamp: Long): List<BaseNote>
+
+    /** Get a note by its sync ID */
+    @Query("SELECT * FROM BaseNote WHERE syncId = :syncId")
+    suspend fun getNotesBySyncId(syncId: String): BaseNote?
+
+    /** Update a note's sync status and last synced timestamp */
+    @Query(
+        "UPDATE BaseNote SET syncStatus = :status, lastSyncedTimestamp = :timestamp WHERE id = :id"
+    )
+    suspend fun updateSyncStatus(id: Long, status: SyncStatus, timestamp: Long)
+
+    /** Update a note's sync ID */
+    @Query("UPDATE BaseNote SET syncId = :syncId WHERE id = :id")
+    suspend fun updateSyncId(id: Long, syncId: String)
+
+    /** Permanently delete notes marked for deletion */
+    @Query("DELETE FROM BaseNote WHERE syncStatus = 'PENDING_DELETE'")
+    suspend fun deleteNotesPendingDeletion()
 }
