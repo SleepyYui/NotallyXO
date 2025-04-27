@@ -35,6 +35,7 @@ import com.sleepyyui.notallyxo.utils.sync.SyncSettingsManager
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -148,6 +149,52 @@ class NotallyXOApplication : Application(), Application.ActivityLifecycleCallbac
         // Schedule background sync if enabled
         if (syncSettingsManager.isSyncEnabled && syncSettingsManager.isAutoSyncEnabled) {
             CloudSyncScheduler.schedulePeriodicSync(this)
+        }
+
+        // Initialize WebSocket connection if sync is enabled
+        if (syncSettingsManager.isSyncEnabled && syncSettingsManager.areSettingsConfigured()) {
+            MainScope().launch {
+                try {
+                    // Initialize and connect to WebSocket
+                    val webSocketClient =
+                        com.sleepyyui.notallyxo.utils.sync.websocket.CloudWebSocketClient
+                            .getInstance(applicationContext)
+                    webSocketClient.connect()
+
+                    // Start a periodic ping to keep the connection alive
+                    startWebSocketPings(webSocketClient)
+                } catch (e: Exception) {
+                    android.util.Log.e(
+                        "NotallyXOApplication",
+                        "Failed to initialize WebSocket: ${e.message}",
+                        e,
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Start sending periodic pings to the WebSocket server to keep the connection alive
+     *
+     * @param webSocketClient The WebSocket client instance
+     */
+    private fun startWebSocketPings(
+        webSocketClient: com.sleepyyui.notallyxo.utils.sync.websocket.CloudWebSocketClient
+    ) {
+        MainScope().launch {
+            while (true) {
+                try {
+                    delay(30000) // Send ping every 30 seconds
+                    webSocketClient.ping()
+                } catch (e: Exception) {
+                    android.util.Log.e(
+                        "NotallyXOApplication",
+                        "Error in WebSocket ping: ${e.message}",
+                        e,
+                    )
+                }
+            }
         }
     }
 

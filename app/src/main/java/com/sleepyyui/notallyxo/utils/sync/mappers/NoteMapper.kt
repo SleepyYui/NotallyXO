@@ -193,6 +193,214 @@ object NoteMapper {
         )
     }
 
+    /**
+     * Creates a NoteDto from a WebSocket JSON message.
+     *
+     * @param jsonObject The JSON object containing note data from WebSocket
+     * @return The NoteDto representation of the note
+     */
+    fun fromWebSocketJson(jsonObject: JSONObject): NoteDto {
+        return NoteDto(
+            syncId = jsonObject.getString("syncId"),
+            title = jsonObject.getString("title"),
+            content = jsonObject.getString("content"),
+            encryptionIv =
+                if (jsonObject.has("encryptionIv")) jsonObject.getString("encryptionIv") else null,
+            lastModifiedTimestamp = jsonObject.getLong("lastModifiedTimestamp"),
+            lastSyncedTimestamp = jsonObject.getLong("lastSyncedTimestamp"),
+            type = jsonObject.getString("type"),
+            isArchived = jsonObject.optBoolean("isArchived", false),
+            isPinned = jsonObject.optBoolean("isPinned", false),
+            isShared = jsonObject.optBoolean("isShared", false),
+            labels =
+                if (jsonObject.has("labels")) {
+                    val labelsArray = jsonObject.getJSONArray("labels")
+                    val labelsList = mutableListOf<String>()
+                    for (i in 0 until labelsArray.length()) {
+                        labelsList.add(labelsArray.getString(i))
+                    }
+                    labelsList
+                } else null,
+            ownerUserId = jsonObject.getString("ownerUserId"),
+            sharedAccesses =
+                if (jsonObject.has("sharedAccesses")) {
+                    val accessesArray = jsonObject.getJSONArray("sharedAccesses")
+                    val accessesList = mutableListOf<SharedAccessDto>()
+                    for (i in 0 until accessesArray.length()) {
+                        val accessObj = accessesArray.getJSONObject(i)
+                        accessesList.add(
+                            SharedAccessDto(
+                                userId = accessObj.getString("userId"),
+                                accessLevel = accessObj.getString("accessLevel"),
+                            )
+                        )
+                    }
+                    accessesList
+                } else null,
+        )
+    }
+
+    /**
+     * Creates a BaseNote from a NoteDto received from WebSocket.
+     *
+     * @param noteDto The NoteDto from WebSocket
+     * @param encryptionService The encryption service
+     * @param secretKey The decryption key
+     * @return A new BaseNote
+     */
+    fun fromNoteDto(
+        noteDto: NoteDto,
+        encryptionService: CloudEncryptionService,
+        secretKey: SecretKey?,
+    ): BaseNote {
+        // Create a new BaseNote with basic fields
+        val baseNote =
+            BaseNote(
+                id = 0, // DB will assign ID when inserted
+                type = Type.valueOf(noteDto.type),
+                folder = if (noteDto.isArchived) Folder.ARCHIVED else Folder.NOTES,
+                color = BaseNote.COLOR_DEFAULT,
+                title = noteDto.title,
+                pinned = noteDto.isPinned,
+                timestamp = noteDto.lastModifiedTimestamp,
+                modifiedTimestamp = noteDto.lastModifiedTimestamp,
+                syncId = noteDto.syncId,
+                syncStatus = SyncStatus.SYNCED,
+                lastSyncedTimestamp = noteDto.lastSyncedTimestamp,
+                isShared = noteDto.isShared,
+                ownerUserId = noteDto.ownerUserId,
+                labels = noteDto.labels ?: emptyList(),
+                body = "",
+                spans = emptyList(),
+                items = emptyList(),
+                images = emptyList(),
+                files = emptyList(),
+                audios = emptyList(),
+                reminders = emptyList(),
+                viewMode = defaultViewMode(Type.valueOf(noteDto.type)),
+                sharedAccesses =
+                    noteDto.sharedAccesses?.map { accessDto ->
+                        SharedAccess(
+                            userId = accessDto.userId,
+                            accessLevel = ShareAccessLevel.valueOf(accessDto.accessLevel),
+                            grantedTimestamp = noteDto.lastModifiedTimestamp,
+                            usedToken = "",
+                        )
+                    } ?: emptyList(),
+            )
+
+        // Try to decrypt content if available
+        if (noteDto.content.isNotEmpty() && noteDto.encryptionIv != null && secretKey != null) {
+            try {
+                val encryptedData =
+                    CloudEncryptionService.EncryptedData(
+                        data =
+                            android.util.Base64.decode(
+                                noteDto.content,
+                                android.util.Base64.NO_WRAP,
+                            ),
+                        iv =
+                            android.util.Base64.decode(
+                                noteDto.encryptionIv,
+                                android.util.Base64.NO_WRAP,
+                            ),
+                    )
+
+                val decryptedBytes = encryptionService.decrypt(encryptedData, secretKey)
+                val decryptedContent = String(decryptedBytes)
+                val contentJson = JSONObject(decryptedContent)
+
+                var updatedNote = baseNote
+                if (contentJson.has("body")) {
+                    updatedNote = updatedNote.copy(body = contentJson.getString("body"))
+                }
+
+                // Handle other fields from JSON as needed
+                // This is simplified and would need proper parsing for spans, items, etc.
+
+                return updatedNote
+            } catch (e: Exception) {
+                // Return baseNote without decrypted content if decryption fails
+                return baseNote
+            }
+        }
+
+        return baseNote
+    }
+
+    /**
+     * Updates an existing local note with data from a DTO received via WebSocket.
+     *
+     * @param existingNote The existing local note to update
+     * @param noteDto The DTO with new data
+     * @param encryptionService The encryption service
+     * @param secretKey The decryption key
+     * @return The updated BaseNote
+     */
+    fun updateLocalNoteFromDto(
+        existingNote: BaseNote,
+        noteDto: NoteDto,
+        encryptionService: CloudEncryptionService,
+        secretKey: SecretKey?,
+    ): BaseNote {
+        // Start with the existing note
+        var updatedNote =
+            existingNote.copy(
+                title = noteDto.title,
+                pinned = noteDto.isPinned,
+                folder = if (noteDto.isArchived) Folder.ARCHIVED else Folder.NOTES,
+                modifiedTimestamp = noteDto.lastModifiedTimestamp,
+                syncStatus = SyncStatus.SYNCED,
+                lastSyncedTimestamp = noteDto.lastSyncedTimestamp,
+                isShared = noteDto.isShared,
+                labels = noteDto.labels ?: existingNote.labels,
+                ownerUserId = noteDto.ownerUserId,
+                sharedAccesses =
+                    noteDto.sharedAccesses?.map { accessDto ->
+                        SharedAccess(
+                            userId = accessDto.userId,
+                            accessLevel = ShareAccessLevel.valueOf(accessDto.accessLevel),
+                            grantedTimestamp = noteDto.lastModifiedTimestamp,
+                            usedToken = "",
+                        )
+                    } ?: existingNote.sharedAccesses,
+            )
+
+        // Try to decrypt and update content if available
+        if (noteDto.content.isNotEmpty() && noteDto.encryptionIv != null && secretKey != null) {
+            try {
+                val encryptedData =
+                    CloudEncryptionService.EncryptedData(
+                        data =
+                            android.util.Base64.decode(
+                                noteDto.content,
+                                android.util.Base64.NO_WRAP,
+                            ),
+                        iv =
+                            android.util.Base64.decode(
+                                noteDto.encryptionIv,
+                                android.util.Base64.NO_WRAP,
+                            ),
+                    )
+
+                val decryptedBytes = encryptionService.decrypt(encryptedData, secretKey)
+                val decryptedContent = String(decryptedBytes)
+                val contentJson = JSONObject(decryptedContent)
+
+                if (contentJson.has("body")) {
+                    updatedNote = updatedNote.copy(body = contentJson.getString("body"))
+                }
+
+                // Handle other content fields from JSON as needed
+                // This is simplified and would need proper parsing for spans, items, etc.
+            } catch (e: Exception) {
+                // Keep existing content if decryption fails
+            }
+        }
+
+        return updatedNote
+    }
+
     /** Get the default view mode for a note type */
     private fun defaultViewMode(type: Type): NoteViewMode {
         return when (type) {

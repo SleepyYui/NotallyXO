@@ -8,6 +8,7 @@ import android.view.Menu.CATEGORY_CONTAINER
 import android.view.Menu.CATEGORY_SYSTEM
 import android.view.MenuItem
 import android.view.View
+import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +42,7 @@ import com.sleepyyui.notallyxo.presentation.add
 import com.sleepyyui.notallyxo.presentation.getQuantityString
 import com.sleepyyui.notallyxo.presentation.movedToResId
 import com.sleepyyui.notallyxo.presentation.setCancelButton
+import com.sleepyyui.notallyxo.presentation.view.SyncStatusIndicatorView
 import com.sleepyyui.notallyxo.presentation.view.misc.NotNullLiveData
 import com.sleepyyui.notallyxo.presentation.view.misc.tristatecheckbox.TriStateCheckBox
 import com.sleepyyui.notallyxo.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
@@ -53,6 +55,8 @@ import com.sleepyyui.notallyxo.presentation.viewmodel.preference.NotallyXOPrefer
 import com.sleepyyui.notallyxo.utils.backup.exportNotes
 import com.sleepyyui.notallyxo.utils.shareNote
 import com.sleepyyui.notallyxo.utils.showColorSelectDialog
+import com.sleepyyui.notallyxo.utils.sync.SyncSettingsManager
+import com.sleepyyui.notallyxo.utils.sync.websocket.CloudWebSocketClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -97,6 +101,8 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         } else if (savedInstanceState == null) {
             navigateToStartView()
         }
+
+        setupSyncStatusIndicator()
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -505,6 +511,36 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     result.data?.data?.let { uri -> baseModel.exportSelectedNotesToFolder(uri) }
                 }
             }
+    }
+
+    /**
+     * Sets up the sync status indicator in the toolbar. This indicator shows WebSocket connection
+     * status and sync activity.
+     */
+    private fun setupSyncStatusIndicator() {
+        // Only set up sync indicator if sync is enabled
+        val syncSettingsManager = SyncSettingsManager.getInstance(this)
+
+        if (syncSettingsManager.isSyncEnabled) {
+            // Create the indicator view
+            val syncStatusIndicatorView = SyncStatusIndicatorView(this)
+
+            // Add it to the container in the toolbar
+            val container = binding.Toolbar.findViewById<FrameLayout>(R.id.sync_status_container)
+            container.addView(syncStatusIndicatorView)
+
+            // Get WebSocket client and connect the indicator
+            val webSocketClient = CloudWebSocketClient.getInstance(this)
+            syncStatusIndicatorView.setWebSocketClient(webSocketClient)
+
+            // Start observing sync status changes
+            syncStatusIndicatorView.startObserving(this)
+
+            // If sync is configured, attempt to connect WebSocket
+            if (syncSettingsManager.areSettingsConfigured()) {
+                webSocketClient.connect()
+            }
+        }
     }
 
     private inner class ModelFolderObserver(

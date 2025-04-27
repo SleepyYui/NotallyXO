@@ -20,6 +20,14 @@
             app:navigationContentDescription="ToolbarNavigation"
             app:contentInsetEnd="16dp">
 
+            <FrameLayout
+                android:id="@+id/sync_status_container"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end">
+                <!-- SyncStatusIndicatorView will be added here programmatically -->
+            </FrameLayout>
+
         </com.google.android.material.appbar.MaterialToolbar>
 
         <com.google.android.material.appbar.MaterialToolbar

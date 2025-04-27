@@ -327,6 +327,14 @@
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
 
+    <!-- Sync Status Indicator -->
+    <string name="sync_status_connected">Cloud connected</string>
+    <string name="sync_status_disconnected">Cloud disconnected</string>
+    <string name="sync_status_connecting">Connecting to cloud…</string>
+    <string name="sync_status_error">Connection error</string>
+    <string name="cloud_sync_status_indicator">Sync status indicator</string>
+    <string name="sync_status_reconnecting">Attempting to reconnect…</string>
+
     <!-- Cloud Synchronization -->
     <string name="cloud_sync">Cloud Sync</string>
     <string name="sync_now">Sync Now</string>

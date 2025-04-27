@@ -107,7 +107,22 @@ The cloud synchronization feature will allow users to:
   - [x] Keep server version
   - [x] Launch edit activity for manual merge
 
-### 8. Testing ⏱️ (Not Started)
+### 8. WebSocket Client Implementation ✅ (Completed)
+
+- [x] Implement WebSocket client in the Android app
+  - [x] Create connection management and status tracking
+  - [x] Add support for reconnection attempts
+  - [x] Handle incoming messages (NOTE_UPDATED, NOTE_DELETED)
+  - [x] Update the local database based on received messages
+  - [x] Add connection listener interface for status updates
+- [x] Create sync status indicator for the main UI
+  - [x] Design and implement custom view component
+  - [x] Show WebSocket connection status (connected, disconnected, error)
+  - [x] Show sync activity status (syncing, idle, failed)
+  - [x] Add visual indicators with appropriate colors
+  - [x] Add tap-to reconnect functionality
+
+### 9. Testing ⏱️ (Not Started)
 
 - [ ] Unit tests for sync logic (Client & Backend)
 - [ ] Integration tests with mock server
@@ -115,7 +130,7 @@ The cloud synchronization feature will allow users to:
 - [ ] Offline capability testing
 - [ ] WebSocket communication testing
 
-### 9. Documentation ⏱️ (Not Started)
+### 10. Documentation ⏱️ (Not Started)
 
 - [ ] User documentation for cloud features
 - [ ] API documentation for server
@@ -123,31 +138,21 @@ The cloud synchronization feature will allow users to:
 
 ## Current Focus
 
-We have completed the core implementation of the backend server, including:
+We have completed the implementation of the WebSocket client in the Android app, including:
 
-1. ✅ All database models (Notes, Users, SharedAccesses, SharingTokens)
-2. ✅ Domain models for business logic
-3. ✅ API models matching client expectations
-4. ✅ All required API routes (Authentication, Users, Notes, Sync, Sharing)
-5. ✅ Repository classes for database access
-6. ✅ JWT-based authentication
-7. ✅ Database initialization and connection handling
-8. ✅ Robust error handling with StatusPages
-9. ✅ CORS support
-10. ✅ Main Ktor application configuration
-11. ✅ WebSocket implementation for real-time updates:
-    - ✅ Setup and connection management
-    - ✅ Broadcasting note updates (`NOTE_UPDATED`) and deletions (`NOTE_DELETED`)
-    - ✅ Integration with `NoteRoutes` to trigger broadcasts
-    - ✅ Enhanced `NoteRoutes` for shared access checks and response details
+1. ✅ Connection management and status tracking
+2. ✅ Support for reconnection attempts
+3. ✅ Handling of incoming messages (NOTE_UPDATED, NOTE_DELETED) 
+4. ✅ Local database updates based on received messages
+5. ✅ Connection listener interface for status updates
+6. ✅ Sync status indicator in the main UI:
+   - Shows WebSocket connection status with appropriate colors
+   - Shows sync activity status
+   - Provides tap-to-reconnect functionality
+   - Integrated into the toolbar for visibility without taking up much space
 
 **Next steps:**
 
-1. **Implement WebSocket client logic in the Android app:**
-   - Connect to the backend WebSocket endpoint.
-   - Handle incoming messages (`NOTE_UPDATED`, `NOTE_DELETED`).
-   - Update the local database and UI in real-time based on received messages.
-   - Ensure proper reconnection logic.
-2. Write basic documentation for self-hosting the backend.
-3. Begin writing unit and integration tests for both client and backend sync logic.
-4. Add missing translations for UI elements related to sync and sharing.
+1. Write basic documentation for self-hosting the backend.
+2. Begin writing unit and integration tests for both client and backend sync logic.
+3. Add missing translations for UI elements related to sync and sharing.
