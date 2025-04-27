@@ -75,14 +75,25 @@ The cloud synchronization feature will allow users to:
 - [x] Add background sync capabilities with WorkManager
 - [x] Fix manual sync functionality in Settings UI
 
-### 6. Backend Implementation ⏱️ (Not Started)
+### 6. Backend Implementation ✅ (Completed - Core Features)
 
-- [ ] Create backend server in the backend/ folder
-  - [ ] User authentication and authorization
-  - [ ] Secure note storage (encrypted)
-  - [ ] API endpoints for sync operations
-  - [ ] Sharing functionality
-- [ ] Implement WebSocket/push notifications for real-time updates
+- [x] Create backend server structure in the backend/ folder
+  - [x] Set up Ktor server with proper dependencies
+  - [x] Configure content negotiation, security, CORS, and error handling
+  - [x] Define database models for notes, users, and sharing
+  - [x] Define API models to match client expectations
+  - [x] Create route handlers for authentication, users, notes, sync, and sharing
+  - [x] Create repository classes for database operations
+  - [x] Implement domain models (Note, User, SharedAccess, SharingToken)
+  - [x] Set up JWT-based authentication
+  - [x] Set up database connections and initialization
+  - [x] Implement main Application.kt entry point
+  - [x] Implement WebSocket/push notifications for real-time updates
+    - [x] Configure WebSocket plugin (`plugins/Sockets.kt`)
+    - [x] Implement connection management and broadcasting logic
+    - [x] Integrate broadcasting into `NoteRoutes.kt` for note updates and deletions
+    - [x] Update `NoteRoutes.kt` to handle shared access checks and include shared access details in responses
+- [ ] Write basic documentation for self-hosting the backend
 
 ### 7. Conflict Resolution ✅ (Completed)
 
@@ -98,10 +109,11 @@ The cloud synchronization feature will allow users to:
 
 ### 8. Testing ⏱️ (Not Started)
 
-- [ ] Unit tests for sync logic
+- [ ] Unit tests for sync logic (Client & Backend)
 - [ ] Integration tests with mock server
 - [ ] End-to-end tests with real server
 - [ ] Offline capability testing
+- [ ] WebSocket communication testing
 
 ### 9. Documentation ⏱️ (Not Started)
 
@@ -111,29 +123,31 @@ The cloud synchronization feature will allow users to:
 
 ## Current Focus
 
-We've made significant progress on the cloud synchronization feature:
+We have completed the core implementation of the backend server, including:
 
-1. ✅ Completed the Data Model enhancements with sharing and sync status fields
-2. ✅ Completed the Database Migration to support the new fields
-3. ✅ Completed the Encryption Implementation using PBKDF2 and AES/RSA encryption
-4. ✅ Completed the main Settings UI for enabling/disabling sync, configuring server, and encryption
-5. ✅ Completed API Client & Networking implementation:
-   - ✅ Created CloudApiClient interface with all necessary endpoints
-   - ✅ Implemented CloudSyncService with robust error handling
-   - ✅ Added NoteMapper for converting between BaseNote and API DTOs
-   - ✅ Implemented core note synchronization logic with proper encryption/decryption
-   - ✅ Added support for handling conflicts
-   - ✅ Implemented background sync with WorkManager
-   - ✅ Fixed manual sync functionality in Settings UI to use actual CloudSyncService
-6. ✅ Completed advanced conflict resolution UI:
-   - ✅ Created ConflictManager to store and manage conflicts
-   - ✅ Added ConflictResolutionActivity to list all conflicts
-   - ✅ Added ConflictDetailActivity to view and resolve individual conflicts
-   - ✅ Implemented resolution options: keep local, keep server, merge
-   - ✅ Added conflict notification in Settings UI with red warning button
+1. ✅ All database models (Notes, Users, SharedAccesses, SharingTokens)
+2. ✅ Domain models for business logic
+3. ✅ API models matching client expectations
+4. ✅ All required API routes (Authentication, Users, Notes, Sync, Sharing)
+5. ✅ Repository classes for database access
+6. ✅ JWT-based authentication
+7. ✅ Database initialization and connection handling
+8. ✅ Robust error handling with StatusPages
+9. ✅ CORS support
+10. ✅ Main Ktor application configuration
+11. ✅ WebSocket implementation for real-time updates:
+    - ✅ Setup and connection management
+    - ✅ Broadcasting note updates (`NOTE_UPDATED`) and deletions (`NOTE_DELETED`)
+    - ✅ Integration with `NoteRoutes` to trigger broadcasts
+    - ✅ Enhanced `NoteRoutes` for shared access checks and response details
 
-Next steps:
-1. Begin backend server implementation
-2. Add unit tests for the sync logic
-3. Create documentation for the cloud sync feature
-4. Add more translations (some strings in settings for example are hardcoded)
+**Next steps:**
+
+1. **Implement WebSocket client logic in the Android app:**
+   - Connect to the backend WebSocket endpoint.
+   - Handle incoming messages (`NOTE_UPDATED`, `NOTE_DELETED`).
+   - Update the local database and UI in real-time based on received messages.
+   - Ensure proper reconnection logic.
+2. Write basic documentation for self-hosting the backend.
+3. Begin writing unit and integration tests for both client and backend sync logic.
+4. Add missing translations for UI elements related to sync and sharing.
