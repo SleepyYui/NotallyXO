@@ -108,9 +108,27 @@ class SyncStatusIndicator(private val context: Context) {
                 textView.text = context.getString(R.string.cloud_sync_failed, errorMsg)
                 textView.visibility = View.VISIBLE
                 // Also set text color to error color
-                textView.setTextColor(
-                    ContextCompat.getColor(context, R.color.md_theme_error)
-                ) // Use md_theme_error
+                textView.setTextColor(ContextCompat.getColor(context, R.color.md_theme_error))
+            }
+            SyncStatus.NOT_CONFIGURED -> {
+                textView.text = context.getString(R.string.cloud_not_configured)
+                textView.visibility = View.VISIBLE
+                // Use warning color for configuration issues
+                textView.setTextColor(ContextCompat.getColor(context, R.color.md_theme_warning))
+            }
+            SyncStatus.CONFLICT_DETECTED -> {
+                val conflictManager = ConflictManager.getInstance(context)
+                val count = conflictManager.getConflictCount()
+                val message =
+                    context.resources.getQuantityString(
+                        R.plurals.cloud_sync_conflicts_detected,
+                        count,
+                        count,
+                    )
+                textView.text = message
+                textView.visibility = View.VISIBLE
+                // Use warning color for conflicts
+                textView.setTextColor(ContextCompat.getColor(context, R.color.md_theme_warning))
             }
             SyncStatus.SYNCED -> {
                 textView.text = context.getString(R.string.cloud_sync_completed)
@@ -119,7 +137,7 @@ class SyncStatusIndicator(private val context: Context) {
                 textView.setTextColor(textView.textColors.defaultColor)
             }
             else -> {
-                // For IDLE, NOT_CONFIGURED, CONFLICT, etc., show the last sync time if available
+                // For IDLE, CONFLICT, etc., show the last sync time if available
                 if (textView.visibility == View.VISIBLE) {
                     // Reset text color to normal
                     textView.setTextColor(textView.textColors.defaultColor)

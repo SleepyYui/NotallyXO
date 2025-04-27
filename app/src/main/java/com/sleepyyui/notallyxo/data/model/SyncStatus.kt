@@ -11,6 +11,9 @@ enum class SyncStatus {
     /** The note has conflicts between local and server versions. */
     CONFLICT,
 
+    /** Conflicts have been detected during sync and need user resolution. */
+    CONFLICT_DETECTED,
+
     /** The note is being currently synchronized. */
     SYNCING,
 

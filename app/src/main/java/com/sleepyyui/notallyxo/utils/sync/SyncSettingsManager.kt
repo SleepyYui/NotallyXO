@@ -59,30 +59,31 @@ class SyncSettingsManager private constructor(private val context: Context) {
         get() = sharedPreferences.getBoolean(PREF_SYNC_ENABLED, false)
         set(value) {
             sharedPreferences.edit().putBoolean(PREF_SYNC_ENABLED, value).apply()
+            updateBackgroundSync()
         }
 
-    /** The URL of the synchronization server. */
+    /** The URL of the sync server (without protocol). */
     var serverUrl: String
         get() = sharedPreferences.getString(PREF_SERVER_URL, "") ?: ""
         set(value) {
             sharedPreferences.edit().putString(PREF_SERVER_URL, value).apply()
         }
 
-    /** The port of the synchronization server. */
+    /** The port of the sync server. */
     var serverPort: Int
         get() = sharedPreferences.getInt(PREF_SERVER_PORT, DEFAULT_PORT)
         set(value) {
             sharedPreferences.edit().putInt(PREF_SERVER_PORT, value).apply()
         }
 
-    /** The authentication token for the synchronization server. */
+    /** The authentication token used for server communication. */
     var authToken: String
         get() = sharedPreferences.getString(PREF_AUTH_TOKEN, "") ?: ""
         set(value) {
             sharedPreferences.edit().putString(PREF_AUTH_TOKEN, value).apply()
         }
 
-    /** The user's unique ID for synchronization and sharing. */
+    /** The user ID from the server. */
     var userId: String
         get() = sharedPreferences.getString(PREF_USER_ID, "") ?: ""
         set(value) {
@@ -104,6 +105,7 @@ class SyncSettingsManager private constructor(private val context: Context) {
         get() = sharedPreferences.getBoolean(PREF_AUTO_SYNC_ENABLED, true)
         set(value) {
             sharedPreferences.edit().putBoolean(PREF_AUTO_SYNC_ENABLED, value).apply()
+            updateBackgroundSync()
         }
 
     /** Whether synchronization should only occur over Wi-Fi. */
@@ -111,6 +113,10 @@ class SyncSettingsManager private constructor(private val context: Context) {
         get() = sharedPreferences.getBoolean(PREF_WIFI_ONLY_SYNC, true)
         set(value) {
             sharedPreferences.edit().putBoolean(PREF_WIFI_ONLY_SYNC, value).apply()
+            // Force reschedule if constraints changed
+            if (isSyncEnabled && isAutoSyncEnabled) {
+                CloudSyncScheduler.schedulePeriodicSync(context, true)
+            }
         }
 
     /** The timestamp of the last successful synchronization. */
@@ -141,10 +147,13 @@ class SyncSettingsManager private constructor(private val context: Context) {
 
     /** Checks if all required sync settings are configured. */
     fun areSettingsConfigured(): Boolean {
-        return serverUrl.isNotBlank() && authToken.isNotBlank() && encryptionSalt.isNotBlank()
+        return isSyncEnabled && serverUrl.isNotEmpty() && authToken.isNotEmpty()
     }
 
-    /** Clears all synchronization settings. */
+    /**
+     * Clears all synchronization settings. Used when signing out or resetting the sync
+     * configuration.
+     */
     fun clearSettings() {
         sharedPreferences
             .edit()
@@ -153,12 +162,28 @@ class SyncSettingsManager private constructor(private val context: Context) {
                 putString(PREF_SERVER_URL, "")
                 putInt(PREF_SERVER_PORT, DEFAULT_PORT)
                 putString(PREF_AUTH_TOKEN, "")
-                // Don't clear the user ID to maintain identity
+                putString(PREF_USER_ID, "")
                 putString(PREF_ENCRYPTION_SALT, "")
-                putBoolean(PREF_AUTO_SYNC_ENABLED, true)
-                putBoolean(PREF_WIFI_ONLY_SYNC, true)
+                // Keep auto sync and WiFi only preferences as they are user preferences
                 putLong(PREF_LAST_SYNC_TIMESTAMP, 0)
             }
             .apply()
+
+        // Cancel any scheduled sync operations
+        CloudSyncScheduler.cancelPeriodicSync(context)
+    }
+
+    /**
+     * Updates background sync scheduling based on current settings. Called whenever a relevant
+     * setting changes.
+     */
+    private fun updateBackgroundSync() {
+        if (isSyncEnabled && isAutoSyncEnabled) {
+            // Schedule/reschedule background sync
+            CloudSyncScheduler.schedulePeriodicSync(context)
+        } else {
+            // Cancel background sync
+            CloudSyncScheduler.cancelPeriodicSync(context)
+        }
     }
 }

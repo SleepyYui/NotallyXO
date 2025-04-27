@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.sleepyyui.notallyxo.data.dao.BaseNoteDao
 import com.sleepyyui.notallyxo.data.model.SyncStatus
+import com.sleepyyui.notallyxo.utils.security.AndroidKeyStoreHelper
 import com.sleepyyui.notallyxo.utils.security.CloudEncryptionService
 import com.sleepyyui.notallyxo.utils.sync.api.CloudApiClient
 import com.sleepyyui.notallyxo.utils.sync.api.model.AuthResponse
@@ -38,15 +39,15 @@ class CloudSyncService(private val context: Context) {
     private val syncSettingsManager = SyncSettingsManager.getInstance(context)
     private val statusIndicator = SyncStatusIndicator.getInstance(context)
     private val encryptionService = CloudEncryptionService()
+    private val conflictManager = ConflictManager.getInstance(context)
     private lateinit var noteDao: BaseNoteDao
 
     // Encryption key for note content
     private val encryptionKey: SecretKey by lazy {
-        // In a real app, this key would be securely stored and retrieved
-        // Here we're deriving it from the auth token as a placeholder
-        // This should be replaced with proper key management in production
-        val salt = syncSettingsManager.userId.ifEmpty { "default_salt" }.toByteArray()
-        encryptionService.deriveKeyFromPassword(syncSettingsManager.authToken, salt)
+        // Get the encryption key from Android's secure key storage
+        // If the key doesn't exist yet, create and store it securely
+        val keyStore = AndroidKeyStoreHelper.getInstance(context)
+        keyStore.getOrCreateSecretKey(ENCRYPTION_KEY_ALIAS)
     }
 
     // Add a function to set the DAO from outside, since we can't inject it directly
@@ -320,6 +321,19 @@ class CloudSyncService(private val context: Context) {
     suspend fun syncNotes(): Result<Boolean> {
         statusIndicator.updateStatus(SyncStatus.SYNCING)
 
+        // Check if basic requirements are met
+        if (!syncSettingsManager.areSettingsConfigured()) {
+            val errorMsg = "Sync settings not fully configured"
+            statusIndicator.updateStatus(SyncStatus.NOT_CONFIGURED, errorMsg)
+            return Result.failure(IllegalStateException(errorMsg))
+        }
+
+        if (!isNetworkAvailable(syncSettingsManager.isWifiOnlySync)) {
+            val errorMsg = "No network connection available"
+            statusIndicator.updateStatus(SyncStatus.FAILED, errorMsg)
+            return Result.failure(IOException(errorMsg))
+        }
+
         // Ensure DAO is initialized
         if (!::noteDao.isInitialized) {
             val errorMsg = "Note DAO not initialized"
@@ -450,23 +464,23 @@ class CloudSyncService(private val context: Context) {
                 }
             }
 
-            // 7c. Handle conflicts - in a basic implementation, server wins
-            // In a more sophisticated implementation, we'd store conflicts for user resolution
+            // 7c. Handle conflicts - store them for user resolution instead of auto-resolving
+            var conflictsDetected = false
             syncResponse.conflicts.forEach { conflict ->
                 val localNote = noteDao.getNotesBySyncId(conflict.syncId)
                 if (localNote != null) {
-                    val resolvedNote =
-                        NoteMapper.toBaseNote(
-                            conflict.remoteNote,
-                            encryptionService,
-                            encryptionKey, // Pass the encryption key
-                            localNote,
-                        )
-                    noteDao.insert(resolvedNote)
-
-                    // In a real app, we might add code here to notify the user of the conflict
-                    // or store both versions for manual resolution
+                    // Instead of automatically resolving, store the conflict for later resolution
+                    conflictManager.addConflict(localNote, conflict)
+                    conflictsDetected = true
                 }
+            }
+
+            // Update status if conflicts were detected
+            if (conflictsDetected) {
+                statusIndicator.updateStatus(
+                    SyncStatus.CONFLICT_DETECTED,
+                    "Conflicts detected: ${syncResponse.conflicts.size}",
+                )
             }
 
             // 8. Update sync status of synced notes
@@ -482,8 +496,10 @@ class CloudSyncService(private val context: Context) {
             // 10. Update last sync timestamp in settings
             syncSettingsManager.lastSyncTimestamp = syncResponse.lastSyncTimestamp
 
-            // 11. Update sync status
-            statusIndicator.updateStatus(SyncStatus.SYNCED, isTemporary = true)
+            // 11. Update sync status (only if no conflicts were detected)
+            if (!conflictsDetected) {
+                statusIndicator.updateStatus(SyncStatus.SYNCED, isTemporary = true)
+            }
             return Result.success(true)
         } catch (e: Exception) {
             statusIndicator.updateStatus(
@@ -496,6 +512,7 @@ class CloudSyncService(private val context: Context) {
 
     companion object {
         @Volatile private var INSTANCE: CloudSyncService? = null
+        private const val ENCRYPTION_KEY_ALIAS = "notallyxo_cloud_sync_encryption_key"
 
         fun getInstance(context: Context): CloudSyncService {
             return INSTANCE

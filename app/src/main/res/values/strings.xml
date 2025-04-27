@@ -361,4 +361,36 @@
     <string name="cloud_sync_failed">Sync failed: %1$s</string>
     <string name="cloud_not_configured">Server not configured</string>
     <string name="cloud_connection_error">Connection error</string>
+    <string name="untitled_note">Untitled note</string>
+    <string name="encrypted_content">Encrypted content</string>
+
+    <!-- Conflict Resolution -->
+    <plurals name="cloud_sync_conflicts_detected">
+        <item quantity="one">%d sync conflict detected</item>
+        <item quantity="other">%d sync conflicts detected</item>
+    </plurals>
+    <string name="cloud_sync_conflict_resolution">Conflict Resolution</string>
+    <string name="cloud_sync_conflict_title">Conflict in "%1$s"</string>
+    <string name="cloud_sync_conflict_message">This note has been modified both locally and on the server. Please choose which version to keep or manually merge the changes.</string>
+    <string name="cloud_sync_conflict_local_version">Local Version</string>
+    <string name="cloud_sync_conflict_server_version">Server Version</string>
+    <string name="cloud_sync_conflict_last_modified">Last modified: %1$s</string>
+    <string name="cloud_sync_conflict_merge">Merge</string>
+    <string name="cloud_sync_conflict_keep_local">Keep Local</string>
+    <string name="cloud_sync_conflict_keep_server">Keep Server</string>
+    <string name="cloud_sync_conflict_show_differences">Show Differences</string>
+    <string name="cloud_sync_conflicts_notification_title">Sync conflicts detected</string>
+    <string name="cloud_sync_conflicts_notification_text">%1$d notes have sync conflicts that need your attention</string>
+    <string name="no_conflicts_detected">No sync conflicts detected</string>
+    <string name="conflict_resolution">Conflict Resolution</string>
+    <string name="conflict_title">Conflict in \"%1$s\"</string>
+    <string name="conflict_description">This note has been modified both locally and on the server.</string>
+    <string name="resolve_conflict">Resolve</string>
+    <string name="conflict_local_version">Local Version</string>
+    <string name="conflict_server_version">Server Version</string>
+    <string name="conflict_keep_local">Keep Local</string>
+    <string name="conflict_keep_server">Keep Server</string>
+    <string name="conflict_merge">Merge Changes</string>
+    <string name="conflict_last_modified">Last modified: %1$s</string>
+    <string name="conflict_resolution_success">Conflict resolved successfully</string>
 </resources>

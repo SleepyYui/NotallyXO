@@ -23,6 +23,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
@@ -35,6 +36,7 @@ import com.sleepyyui.notallyxo.data.model.SyncStatus
 import com.sleepyyui.notallyxo.data.model.toText
 import com.sleepyyui.notallyxo.databinding.DialogTextInputBinding
 import com.sleepyyui.notallyxo.databinding.FragmentSettingsBinding
+import com.sleepyyui.notallyxo.presentation.activity.conflict.ConflictResolutionActivity
 import com.sleepyyui.notallyxo.presentation.activity.main.MainActivity
 import com.sleepyyui.notallyxo.presentation.setCancelButton
 import com.sleepyyui.notallyxo.presentation.setEnabledSecureFlag
@@ -64,10 +66,15 @@ import com.sleepyyui.notallyxo.utils.getUriForFile
 import com.sleepyyui.notallyxo.utils.reportBug
 import com.sleepyyui.notallyxo.utils.security.CloudEncryptionService
 import com.sleepyyui.notallyxo.utils.security.showBiometricOrPinPrompt
+import com.sleepyyui.notallyxo.utils.sync.CloudSyncService
+import com.sleepyyui.notallyxo.utils.sync.ConflictManager
 import com.sleepyyui.notallyxo.utils.sync.SyncSettingsManager
 import com.sleepyyui.notallyxo.utils.sync.SyncStatusIndicator
 import com.sleepyyui.notallyxo.utils.wrapWithChooser
 import java.util.Date
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
 
@@ -809,6 +816,8 @@ class SettingsFragment : Fragment() {
 
     private fun setupCloudSync(binding: FragmentSettingsBinding) {
         val syncSettingsManager = SyncSettingsManager.getInstance(requireContext())
+        val syncStatusIndicator = SyncStatusIndicator.getInstance(requireContext())
+        val conflictManager = ConflictManager.getInstance(requireContext())
 
         fun updateDependentPreferenceStates(isEnabled: Boolean) {
             _binding?.let { b ->
@@ -830,6 +839,10 @@ class SettingsFragment : Fragment() {
                 val isConfigured = syncSettingsManager.areSettingsConfigured()
                 b.CloudSyncNow.isEnabled = isEnabled && isConfigured
                 b.CloudSyncNow.alpha = if (b.CloudSyncNow.isEnabled) 1.0f else 0.5f
+
+                // Show or hide the resolve conflicts button based on whether there are any
+                // conflicts
+                updateConflictButton()
 
                 if (!isEnabled) {
                     b.CloudSyncStatus.visibility = View.GONE
@@ -886,19 +899,55 @@ class SettingsFragment : Fragment() {
                 binding.CloudSyncNow.isEnabled = false
                 binding.CloudSyncNow.alpha = 0.5f
 
-                android.os
-                    .Handler(android.os.Looper.getMainLooper())
-                    .postDelayed(
-                        {
-                            syncStatusIndicator.updateStatus(SyncStatus.SYNCED, isTemporary = true)
-                            syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
+                // Actually perform sync using CloudSyncService
+                val cloudSyncService = CloudSyncService.getInstance(requireContext())
+
+                // Launch in a coroutine scope to perform the sync operation
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val result = cloudSyncService.syncNotes()
+
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            if (result.isSuccess) {
+                                // Only update to success if the operation actually succeeded
+                                syncStatusIndicator.updateStatus(
+                                    SyncStatus.SYNCED,
+                                    isTemporary = true,
+                                )
+                            }
+                            // Status indicator already updated by the service if it failed
+
                             binding.CloudSyncNow.isEnabled = true
                             binding.CloudSyncNow.alpha = 1.0f
-                        },
-                        2000,
-                    )
+                            syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
+
+                            // Update conflict button visibility in case conflicts were detected
+                            updateConflictButton()
+                        }
+                    } catch (e: Exception) {
+                        // Handle unexpected errors
+                        withContext(Dispatchers.Main) {
+                            syncStatusIndicator.updateStatus(
+                                SyncStatus.FAILED,
+                                e.message ?: getString(R.string.cloud_connection_error),
+                            )
+                            binding.CloudSyncNow.isEnabled = true
+                            binding.CloudSyncNow.alpha = 1.0f
+                            syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
+                        }
+                    }
+                }
             }
         }
+
+        // Add the Resolve Conflicts button
+        binding.CloudResolveConflicts.setOnClickListener {
+            startActivity(ConflictResolutionActivity.createIntent(requireContext()))
+        }
+
+        // Initialize the button state
+        updateConflictButton()
 
         if (syncSettingsManager.isSyncEnabled) {
             syncStatusIndicator.updateStatusText(binding.CloudSyncStatus)
@@ -906,6 +955,7 @@ class SettingsFragment : Fragment() {
             binding.CloudSyncStatus.visibility = View.GONE
         }
 
+        // Listen for status changes
         syncStatusIndicator.syncStatus.observe(viewLifecycleOwner) { status ->
             _binding?.let { b ->
                 if (syncSettingsManager.isSyncEnabled) {
@@ -919,6 +969,38 @@ class SettingsFragment : Fragment() {
 
                 b.CloudSyncNow.isEnabled = canSync
                 b.CloudSyncNow.alpha = if (canSync) 1.0f else 0.5f
+
+                // Update conflict button when status changes (conflicts might be detected)
+                updateConflictButton()
+            }
+        }
+
+        // Listen for conflict changes
+        conflictManager.pendingConflicts.observe(viewLifecycleOwner) { conflicts ->
+            updateConflictButton()
+        }
+    }
+
+    /**
+     * Updates the visibility and state of the conflict resolution button based on whether there are
+     * any pending conflicts.
+     */
+    private fun updateConflictButton() {
+        _binding?.let { b ->
+            val conflictManager = ConflictManager.getInstance(requireContext())
+            val hasConflicts = conflictManager.hasConflicts()
+            val conflictCount = conflictManager.getConflictCount()
+
+            if (hasConflicts) {
+                b.CloudResolveConflicts.visibility = View.VISIBLE
+                b.CloudResolveConflicts.text =
+                    resources.getQuantityString(
+                        R.plurals.cloud_sync_conflicts_detected,
+                        conflictCount,
+                        conflictCount,
+                    )
+            } else {
+                b.CloudResolveConflicts.visibility = View.GONE
             }
         }
     }

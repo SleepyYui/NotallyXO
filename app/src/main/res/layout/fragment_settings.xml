@@ -264,6 +264,16 @@
             android:layout_height="wrap_content"
             android:text="@string/sync_now" />
 
+        <TextView
+            android:id="@+id/CloudResolveConflicts"
+            style="@style/Preference"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:background="?attr/colorError"
+            android:alpha="0.7"
+            android:textColor="?attr/colorOnError" />
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

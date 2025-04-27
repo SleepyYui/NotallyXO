@@ -30,6 +30,8 @@ import com.sleepyyui.notallyxo.utils.backup.scheduleAutoBackup
 import com.sleepyyui.notallyxo.utils.backup.updateAutoBackup
 import com.sleepyyui.notallyxo.utils.observeOnce
 import com.sleepyyui.notallyxo.utils.security.UnlockReceiver
+import com.sleepyyui.notallyxo.utils.sync.CloudSyncScheduler
+import com.sleepyyui.notallyxo.utils.sync.SyncSettingsManager
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -49,6 +51,10 @@ class NotallyXOApplication : Application(), Application.ActivityLifecycleCallbac
         registerActivityLifecycleCallbacks(this)
         if (isTestRunner()) return
         preferences = NotallyXOPreferences.getInstance(this)
+
+        // Initialize cloud sync if enabled
+        initializeCloudSync()
+
         if (preferences.useDynamicColors.value) {
             if (DynamicColors.isDynamicColorAvailable()) {
                 DynamicColors.applyToActivitiesIfAvailable(this)
@@ -129,6 +135,19 @@ class NotallyXOApplication : Application(), Application.ActivityLifecycleCallbac
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Initializes cloud synchronization based on user preferences. This sets up the background sync
+     * scheduling if sync is enabled.
+     */
+    private fun initializeCloudSync() {
+        val syncSettingsManager = SyncSettingsManager.getInstance(this)
+
+        // Schedule background sync if enabled
+        if (syncSettingsManager.isSyncEnabled && syncSettingsManager.isAutoSyncEnabled) {
+            CloudSyncScheduler.schedulePeriodicSync(this)
         }
     }
 

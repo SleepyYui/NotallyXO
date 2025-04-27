@@ -62,7 +62,7 @@ The cloud synchronization feature will allow users to:
   - [ ] Input field for receiving shared notes
   - [ ] Manage shared access (change permissions, revoke access)
 
-### 5. API Client & Networking 🔄 (In Progress)
+### 5. API Client & Networking ✅ (Completed)
 
 - [x] Design and implement REST API client
   - [x] Authentication mechanism
@@ -72,7 +72,8 @@ The cloud synchronization feature will allow users to:
   - [x] Store pending changes locally
   - [x] Track sync status of notes
 - [x] Add basic conflict resolution mechanism
-- [ ] Add background sync capabilities with WorkManager
+- [x] Add background sync capabilities with WorkManager
+- [x] Fix manual sync functionality in Settings UI
 
 ### 6. Backend Implementation ⏱️ (Not Started)
 
@@ -83,13 +84,17 @@ The cloud synchronization feature will allow users to:
   - [ ] Sharing functionality
 - [ ] Implement WebSocket/push notifications for real-time updates
 
-### 7. Conflict Resolution ⏱️ (Not Started)
+### 7. Conflict Resolution ✅ (Completed)
 
-- [ ] Implement conflict detection
-- [ ] Create UI for conflict resolution
-  - [ ] Show differences between local and server versions
-  - [ ] Allow choosing which version to keep or merge
-- [ ] Implement automatic resolution strategies (optional)
+- [x] Implement conflict detection
+- [x] Create UI for conflict resolution
+  - [x] Show differences between local and server versions
+  - [x] Allow choosing which version to keep or merge
+- [x] Implement automatic resolution strategies (server wins by default)
+- [x] Add advanced manual resolution options:
+  - [x] Keep local version
+  - [x] Keep server version
+  - [x] Launch edit activity for manual merge
 
 ### 8. Testing ⏱️ (Not Started)
 
@@ -112,16 +117,23 @@ We've made significant progress on the cloud synchronization feature:
 2. ✅ Completed the Database Migration to support the new fields
 3. ✅ Completed the Encryption Implementation using PBKDF2 and AES/RSA encryption
 4. ✅ Completed the main Settings UI for enabling/disabling sync, configuring server, and encryption
-5. 🔄 API Client & Networking implementation largely complete:
+5. ✅ Completed API Client & Networking implementation:
    - ✅ Created CloudApiClient interface with all necessary endpoints
    - ✅ Implemented CloudSyncService with robust error handling
    - ✅ Added NoteMapper for converting between BaseNote and API DTOs
    - ✅ Implemented core note synchronization logic with proper encryption/decryption
-   - ✅ Added support for handling conflicts (currently server wins)
-   - ❌ Still need to implement background sync with WorkManager
+   - ✅ Added support for handling conflicts
+   - ✅ Implemented background sync with WorkManager
+   - ✅ Fixed manual sync functionality in Settings UI to use actual CloudSyncService
+6. ✅ Completed advanced conflict resolution UI:
+   - ✅ Created ConflictManager to store and manage conflicts
+   - ✅ Added ConflictResolutionActivity to list all conflicts
+   - ✅ Added ConflictDetailActivity to view and resolve individual conflicts
+   - ✅ Implemented resolution options: keep local, keep server, merge
+   - ✅ Added conflict notification in Settings UI with red warning button
 
 Next steps:
-1. Add background synchronization using WorkManager
-2. Implement more advanced conflict resolution UI
-3. Begin backend server implementation
-4. Add unit tests for the sync logic
+1. Begin backend server implementation
+2. Add unit tests for the sync logic
+3. Create documentation for the cloud sync feature
+4. Add more translations (some strings in settings for example are hardcoded)

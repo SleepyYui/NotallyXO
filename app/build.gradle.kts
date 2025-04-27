@@ -104,7 +104,8 @@ android {
 
     buildFeatures {
         viewBinding = true
-        buildConfig = true // Explicitly enable buildConfig
+        dataBinding = true
+        buildConfig = true // Added to fix the deprecation warning
     }
 
     packaging {
